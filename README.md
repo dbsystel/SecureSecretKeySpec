@@ -7,7 +7,7 @@ This makes it possible to easily find keys in a memory dump. One just has to sea
 `SecureSecretKeySpec` is a replacement for Java's SecretKeySpec. It does multiple things to enhance the security of the stores key
 
 * Implements the `AutoCloseable` interface so the key is automatically destroyed when the key is closed
-* Implements the `Destroyable` interface (just like the original `SecureSecretKeySpec`)
+* Implements the `Destroyable` interface (unlike in the original `SecureSecretKeySpec`, this class has a working `destroy` method)
 * Stores the key and the algorithm name in an obfuscated form, so they never appear in the clear
 * Stores the key and the algorithm name in a shuffled form, so the order is changed
 * Stores the key and the algorithm name within a larger array of random values so it appears as random data
