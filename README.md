@@ -30,3 +30,15 @@ A typical usage would be something like this:
     } // Here the SecureSecretKeySpec is automatically destroyed due to the AutoClosable interface
 
 Note that this is security by obscurity. It does not make it impossible to get at the key. It just makes it harder and there are no visible clues within the memory dump any more. However, if an attacker analyzes the memory dump he will be able to extract the key (with quite a bit of effort, though). One could make this a bit more secure if one uses an Java code obfuscator so the class names will be random.
+
+## Contributing
+
+Feel free to submit a pull request with new features, improvements on tests or documentation and bug fixes.
+
+## Contact
+
+Frank Schwab ([Mail](mailto:frank.schwab@deutschebahn.com "Mail"))
+
+## License
+
+PBKDF2WinCTester is released under the 2-clause BSD license.
