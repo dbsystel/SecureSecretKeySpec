@@ -1,39 +1,34 @@
 /*
- * Copyright (c) 2016, DB Systel GmbH
+ * Copyright (c) 2017, DB Systel GmbH
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * 
  * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * 
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the distribution.
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, 
- * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
- * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
+ * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Frank Schwab, DB Systel GmbH
- *
- * Implementation of a secure SecretKeySpec.
- *
- * @author Frank Schwab
- * @version 2.1.0
  *
  * Changes: 
  *     2016-09-26: V2.0.0: Use ProtectedByteArray.
  *     2016-11-24: V2.1.0: Implement "javax.security.auth.Destroyable" interface.
  */
-package cryptolib;
+package dbscryptolib;
 
 import java.security.spec.KeySpec;
 import java.util.Arrays;
-import javax.security.auth.Destroyable;
 import javax.crypto.SecretKey;
+import javax.security.auth.Destroyable;
 
 /**
  * A key specification for a <code>SecretKey</code> and also a secret key
@@ -43,7 +38,7 @@ import javax.crypto.SecretKey;
  * It is intended to be used as a drop-in replacement for <code>SecretKeySpec</code>.
  *
  * @author Frank Schwab
- * @version 2.0.0
+ * @version 2.1.0
  */
 public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, AutoCloseable {
    private final ProtectedByteArray key;
@@ -97,7 +92,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalArgumentException if <code>key</code> is null or
     * <code>algorithm</code> is null
     */
-   private void checkAlgorithm(String algorithm) {
+   private void checkAlgorithm(String algorithm) throws IllegalArgumentException {
       if (algorithm == null) {
          throw new IllegalArgumentException("algorithm == null");
       }

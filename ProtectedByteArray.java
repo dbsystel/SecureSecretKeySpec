@@ -1,34 +1,30 @@
 /*
- * Copyright (c) 2016, DB Systel GmbH
+ * Copyright (c) 2017, DB Systel GmbH
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * 
  * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * 
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the distribution.
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, 
- * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, 
- * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
- * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
+ * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+ * SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Frank Schwab, DB Systel GmbH
  *
- * Stores a byte array in a protected form.
- *
- * @author Frank Schwab
- * @version 4.2.0
- *
  * Changes: 
  *     2016-09-26: V4.1.0: Created
- *     2016-11-24: V4.2.0: Make "isValid" preoperty of underlying array publicly available.
+ *     2016-11-24: V4.2.0: Make "isValid" property of underlying array publicly available.
+ *     2017-12-21: V4.2.1: Added "throws" tags.
  */
-package cryptolib;
+package dbscryptolib;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
@@ -42,7 +38,7 @@ import java.util.Arrays;
  * has been set with the constructor.
  *
  * @author Frank Schwab
- * @version 4.1.0
+ * @version 4.2.1
  */
 public final class ProtectedByteArray implements AutoCloseable {
 
@@ -55,7 +51,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @param arrayToProtect The byte array to protect.
     * @throws IllegalArgumentException if <code>arrayToProtect</code> is null.
     */
-   public ProtectedByteArray(byte[] arrayToProtect) {
+   public ProtectedByteArray(byte[] arrayToProtect) throws IllegalArgumentException {
       this.protectedArray = new ShuffledByteArray(arrayToProtect);
 
       this.obfuscation = createNewObfuscationArray(arrayToProtect.length);
@@ -76,7 +72,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * long enough to get <code>len</code> bytes from position
     * <code>offset</code> in array <code>arrayToProtect</code>.
     */
-   public ProtectedByteArray(byte[] arrayToProtect, int offset, int len) {
+   public ProtectedByteArray(byte[] arrayToProtect, int offset, int len) throws ArrayIndexOutOfBoundsException, IllegalArgumentException {
       checkArray(arrayToProtect);
 
       checkOffsetAndLength(arrayToProtect, offset, len);
@@ -105,7 +101,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @param arrayToProtect Key as byte array
     * @throws IllegalArgumentException if <code>arrayToProtect</code> is null
     */
-   private void checkArray(byte[] arrayToProtect) {
+   private void checkArray(byte[] arrayToProtect) throws IllegalArgumentException {
       if (arrayToProtect == null) {
          throw new IllegalArgumentException("arrayToProtect is null");
       }
@@ -123,8 +119,8 @@ public final class ProtectedByteArray implements AutoCloseable {
     * long enough to get <code>len</code> bytes from position
     * <code>offset</code> in array <code>arrayToProtect</code>.
     */
-   private void checkOffsetAndLength(byte[] arrayToProtect, int offset, int len) {
-      if (offset < 0 || len < 0) {
+   private void checkOffsetAndLength(byte[] arrayToProtect, int offset, int len) throws IllegalArgumentException {
+      if ((offset < 0) || (len < 0)) {
          throw new ArrayIndexOutOfBoundsException("offset < 0 || len < 0");
       }
 
