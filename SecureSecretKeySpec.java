@@ -20,8 +20,9 @@
  * Author: Frank Schwab, DB Systel GmbH
  *
  * Changes: 
- *     2016-09-26: V2.0.0: Use ProtectedByteArray.
- *     2016-11-24: V2.1.0: Implement "javax.security.auth.Destroyable" interface.
+ *     2016-09-26: V2.0.0: Use ProtectedByteArray. fhs
+ *     2016-11-24: V2.1.0: Implement "javax.security.auth.Destroyable" interface. fhs
+ *     2018-08-15: V2.1.1: Added a few "finals". fhs
  */
 package dbscryptolib;
 
@@ -34,16 +35,17 @@ import javax.security.auth.Destroyable;
  * A key specification for a <code>SecretKey</code> and also a secret key
  * implementation that is provider-independent. It can be used for raw secret
  * keys that can be specified as <code>byte[]</code>.
- * 
- * It is intended to be used as a drop-in replacement for <code>SecretKeySpec</code>.
+ *
+ * It is intended to be used as a drop-in replacement for
+ * <code>SecretKeySpec</code>.
  *
  * @author Frank Schwab
- * @version 2.1.0
+ * @version 2.1.1
  */
 public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, AutoCloseable {
+
    private final ProtectedByteArray key;
    private final ProtectedByteArray algorithm;
-
 
    /**
     * Creates a new <code>SecureSecretKeySpec</code> for the specified key data
@@ -54,7 +56,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalArgumentException if the key data or the algorithm name is
     * null.
     */
-   public SecureSecretKeySpec(byte[] key, String algorithm) {
+   public SecureSecretKeySpec(final byte[] key, final String algorithm) {
       checkAlgorithm(algorithm);
 
       this.key = new ProtectedByteArray(key);
@@ -77,7 +79,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws ArrayIndexOutOfBoundsException if <code>offset</code> or
     * <code>len</code> is negative.
     */
-   public SecureSecretKeySpec(byte[] key, int offset, int len, String algorithm) {
+   public SecureSecretKeySpec(final byte[] key, final int offset, final int len, final String algorithm) {
       checkAlgorithm(algorithm);
 
       this.key = new ProtectedByteArray(key, offset, len);
@@ -92,32 +94,30 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalArgumentException if <code>key</code> is null or
     * <code>algorithm</code> is null
     */
-   private void checkAlgorithm(String algorithm) throws IllegalArgumentException {
-      if (algorithm == null) {
+   private void checkAlgorithm(final String algorithm) throws IllegalArgumentException {
+      if (algorithm == null)
          throw new IllegalArgumentException("algorithm == null");
-      }
    }
 
    /*
     * Private methods
     */
-   
    /**
     * Creates a new ProtectedByteArray for the algorithm name
-    * 
+    *
     * @param algorithm Name of the algorithm as String
     * @return ProtectedByteArray that hides the algorithm name
     */
-   private ProtectedByteArray createNewAlgorithmArray(String algorithm) {
-      ProtectedByteArray result;
-      
+   private ProtectedByteArray createNewAlgorithmArray(final String algorithm) {
       final byte[] algorithmBytes = algorithm.getBytes();
-      result = new ProtectedByteArray(algorithmBytes);
+
+      final ProtectedByteArray result = new ProtectedByteArray(algorithmBytes);
+
       Arrays.fill(algorithmBytes, (byte) 0); // Clear sensitive data
-   
+
       return result;
    }
-   
+
    /*
     * Interface methods
     */
@@ -148,9 +148,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     */
    @Override
    public byte[] getEncoded() {
-      byte[] result = this.key.getData();
-
-      return result;
+      return this.key.getData();
    }
 
    /**
@@ -174,26 +172,24 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * otherwise false.
     */
    @Override
-   public boolean equals(Object obj) {
-      if (obj == null) {
+   public boolean equals(final Object obj) {
+      if (obj == null)
          return false;
-      }
-      
-      if (getClass() != obj.getClass()) {
+
+      if (getClass() != obj.getClass())
          return false;
-      }
-      
+
       final SecureSecretKeySpec other = (SecureSecretKeySpec) obj;
-      if (!this.key.equals(other.key)) {
+      if (!this.key.equals(other.key))
          return false;
-      }
 
       return this.getAlgorithm().equalsIgnoreCase(other.getAlgorithm());
    }
-   
+
    /*
     * Method for AutoCloseable interface
     */
+   
    /**
     * Secure deletion of key and algorithm
     *
@@ -208,6 +204,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
    /*
     * Methods for Destroyable interface
     */
+   
    /**
     * Secure destruction of secret key spec
     *

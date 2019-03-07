@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, DB Systel GmbH
+ * Copyright (c) 2019, DB Systel GmbH
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,7 +20,10 @@
  * Author: Frank Schwab, DB Systel GmbH
  *
  * Changes: 
- *     2015-09-26: V1.0.0: Created
+ *     2015-09-26: V1.0.0: Created. fhs
+ *     2018-08-15: V1.0.1: Added a few more "finals". fhs
+ *     2018-08-16: V1.0.2: Made name of SPRNG variable conform to class visible variable name. fhs
+ *     2019-03-06: V1.1.0: Store array length in an obfuscated form. fhs
  */
 package dbscryptolib;
 
@@ -31,10 +34,13 @@ import java.util.Arrays;
  * Stores a byte array in a shuffled form.
  *
  * @author Frank Schwab
- * @version 1.0.0
+ * @version 1.1.0
  */
 public final class ShuffledByteArray implements AutoCloseable {
 
+   /*
+    * Instance variables
+    */
    private byte[] byteArray;
 
    private int[] indexArray;
@@ -42,28 +48,32 @@ public final class ShuffledByteArray implements AutoCloseable {
    private int indexFactor;
    private int indexStart;
 
-   private int realLength;
+   private int storedArrayLength;
 
    private int hashCode;
-   
+
    private boolean isValid;
 
-   private final SecureRandom sprng = new SecureRandom();
+   /*
+    * Random numbers are needed in several places so the PRNG is instantiated
+    * one time at the class level.
+    */
+   private final SecureRandom SECURE_PRNG = new SecureRandom();
 
    /**
     * Constructor for the shuffled byte array with a source array
     *
     * @param sourceArray Source byte array
-    * @throws IllegalArgumentException
+    * @throws IllegalArgumentException if {@code sourceArray} is {@code null}
     */
-   public ShuffledByteArray(byte[] sourceArray) throws IllegalArgumentException {
+   public ShuffledByteArray(final byte[] sourceArray) throws IllegalArgumentException {
       checkArray(sourceArray);
-      
+
       this.initializeDataStructures(sourceArray.length);
       this.setValues(sourceArray);
 
       this.hashCode = Arrays.hashCode(sourceArray);   // Calculate hash code of source only once
-              
+
       this.isValid = true;
    }
 
@@ -74,7 +84,7 @@ public final class ShuffledByteArray implements AutoCloseable {
    /*
     * Check methods
     */
-   
+  
    /**
     * Checks whether array is valid
     * <p>
@@ -84,11 +94,11 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @param sourceArray A byte array
     * @throws IllegalArgumentException if <code>sourceArray</code> is null
     */
-   private void checkArray(byte[] sourceArray) throws IllegalArgumentException {
-      if (sourceArray == null) {
+   private void checkArray(final byte[] sourceArray) throws IllegalArgumentException {
+      if (sourceArray == null)
          throw new IllegalArgumentException("sourceArray is null");
-      }
    }
+
    /**
     * Checks whether the shuffled byte array is in a valid state
     *
@@ -96,59 +106,56 @@ public final class ShuffledByteArray implements AutoCloseable {
     * destroyed
     */
    private void checkState() throws IllegalStateException {
-      if (!this.isValid) {
+      if (!this.isValid)
          throw new IllegalStateException("ShuffledByteArray has already been destroyed");
-      }
    }
 
    /**
     * Checks whether a given external index is valid
-    * 
+    *
     * @param externalIndex Index value to be checked
-    * @throws ArrayIndexOutOfBoundsException 
+    * @throws ArrayIndexOutOfBoundsException if index is out of array bounds
     */
-   private void checkExternalIndex(int externalIndex) throws ArrayIndexOutOfBoundsException {
-      if ((externalIndex < 0) || (externalIndex >= this.realLength)) {
-            throw new ArrayIndexOutOfBoundsException("Illegal index " + Integer.toString(externalIndex));
-      }
+   private void checkExternalIndex(final int externalIndex) throws ArrayIndexOutOfBoundsException {
+      if ((externalIndex < 0) || (externalIndex >= getRealIndex(this.storedArrayLength)))
+         throw new ArrayIndexOutOfBoundsException("Illegal index " + Integer.toString(externalIndex));
    }
-   
+
    /**
     * Checks the state and then the validity of the given external index
-    * 
+    *
     * @param externalIndex Index value to be checked
     */
-   private void checkStateAndExternalIndex(int externalIndex) {
+   private void checkStateAndExternalIndex(final int externalIndex) {
       checkState();
       checkExternalIndex(externalIndex);
    }
 
    /*
-    * Methods for data structure initialization and maitenance
+    * Methods for data structure initialization and maintenance
     */
-
    /**
-    * Calculates the array size required for storing the data.
-    * The stored array has at least twice the size of the original array to be
-    * able to set a random start point in the index reorder array.
+    * Calculates the array size required for storing the data. The stored array
+    * has at least twice the size of the original array to be able to set a
+    * random start point in the index reorder array.
     *
     * @param forSize Original size
     * @return Size of shuffled array
     */
-   private int getStoreLength(int forSize) {
+   private int getStoreLength(final int forSize) {
       final int calcSize = forSize + forSize + 7;
- 
-      return this.sprng.nextInt(calcSize) + calcSize;
+
+      return this.SECURE_PRNG.nextInt(calcSize) + calcSize;
    }
-   
+
    /**
     * Gets the offset for index obfuscation
     *
     * @param arrayLength Length of the array
     * @return Offset for indices
     */
-   private int getIndexOffset(int arrayLength) {
-      return this.sprng.nextInt(100000) + arrayLength + arrayLength + 1;
+   private int getIndexOffset(final int arrayLength) {
+      return this.SECURE_PRNG.nextInt(100000) + arrayLength + arrayLength + 1;
    }
 
    /**
@@ -158,17 +165,17 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @param arrayLength Length of the array
     * @return Factor for indices
     */
-   private int getIndexFactor(int offset, int arrayLength) {
+   private int getIndexFactor(final int offset, final int arrayLength) {
       return (5 * offset) / (3 * arrayLength);
    }
+
    /**
     * Initializes the index array with each position holding it's own index in
     * store index form.
     */
    private void initializeIndexArray() {
-      for (int i = 0; i < this.indexArray.length; i++) {
+      for (int i = 0; i < this.indexArray.length; i++)
          this.indexArray[i] = getStoreIndex(i);
-      }
    }
 
    /**
@@ -184,8 +191,8 @@ public final class ShuffledByteArray implements AutoCloseable {
       final int arrayLength = this.indexArray.length;
 
       do {
-         i1 = this.sprng.nextInt(arrayLength);
-         i2 = this.sprng.nextInt(arrayLength);
+         i1 = this.SECURE_PRNG.nextInt(arrayLength);
+         i2 = this.SECURE_PRNG.nextInt(arrayLength);
 
          // Swapping is inlined for performance
          if (i1 != i2) {
@@ -204,10 +211,10 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @param arrayLength Length of the array to get the start position for
     * @return Start position in the array
     */
-   private int getStartPosition(int arrayLength) {
+   private int getStartPosition(final int arrayLength) {
       // "+1" because the max. start position is at the half size of
       // the array.
-      return this.sprng.nextInt((arrayLength >> 1) + 1);
+      return this.SECURE_PRNG.nextInt((arrayLength >> 1) + 1);
    }
 
    /**
@@ -234,19 +241,19 @@ public final class ShuffledByteArray implements AutoCloseable {
     *
     * @param sourceLength Length of source array
     */
-   private void initializeDataStructures(int sourceLength) {
-      this.realLength = sourceLength;
-
-      final int storeLength = getStoreLength(this.realLength);
+   private void initializeDataStructures(final int sourceLength) {
+      final int storeLength = getStoreLength(sourceLength);
 
       this.byteArray = new byte[storeLength];
-      this.sprng.nextBytes(this.byteArray);   // Initialize the data with random values
-      
+      this.SECURE_PRNG.nextBytes(this.byteArray);   // Initialize the data with random values
+
       this.indexArray = new int[storeLength];
 
       this.indexOffset = getIndexOffset(storeLength);
       this.indexFactor = getIndexFactor(this.indexOffset, storeLength);
       setUpIndexArray();
+
+      this.storedArrayLength = getStoreIndex(sourceLength);
    }
 
    /**
@@ -255,15 +262,15 @@ public final class ShuffledByteArray implements AutoCloseable {
    private void clearData() {
       Arrays.fill(this.byteArray, (byte) 0); // Clear sensitive data
 
-      Arrays.fill(this.indexArray, (int) 0);
-      
+      Arrays.fill(this.indexArray, 0);
+
       this.indexStart = 0;
       this.indexOffset = 0;
       this.indexFactor = 0;
 
       this.hashCode = 0;
-      
-      this.realLength = 0;
+
+      this.storedArrayLength = 0;
    }
 
    /**
@@ -272,7 +279,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @param realIndex Real index
     * @return Store index
     */
-   private int getStoreIndex(int realIndex) {
+   private int getStoreIndex(final int realIndex) {
       // 2 is added so that the indexOffset is not put out for a realIndex of 0
       // and neither is the difference of indexOffset and indexFactor.
       return (this.indexFactor * (realIndex + 2)) - this.indexOffset;
@@ -284,7 +291,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @param storeIndex Store index
     * @return Real index
     */
-   private int getRealIndex(int storeIndex) {
+   private int getRealIndex(final int storeIndex) {
       return ((storeIndex + this.indexOffset) / this.indexFactor) - 2;
    }
 
@@ -294,23 +301,21 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @param externalIndex External index
     * @return The index into the byte array
     */
-   private int getArrayIndex(int externalIndex) {
+   private int getArrayIndex(final int externalIndex) {
       return getRealIndex(this.indexArray[externalIndex + this.indexStart]);
    }
 
    /*
     * Methods for accessing data from or to byte array
     */
- 
    /**
     * Sets the destination array to the values in the source array.
     *
     * @param sourceArray Source byte array
     */
-   private void setValues(byte[] sourceArray) {
-      for (int i = 0; i < sourceArray.length; i++) {
+   private void setValues(final byte[] sourceArray) {
+      for (int i = 0; i < sourceArray.length; i++)
          this.byteArray[getArrayIndex(i)] = sourceArray[i];
-      }
    }
 
    /**
@@ -319,23 +324,21 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @return Values stored in shuffled byte array
     */
    private byte[] getValues() {
-      final byte[] result = new byte[this.realLength];
+      final byte[] result = new byte[getRealIndex(this.storedArrayLength)];
 
-      for (int i = 0; i < result.length; i++) {
+      for (int i = 0; i < result.length; i++)
          result[i] = this.byteArray[getArrayIndex(i)];
-      }
 
       return result;
    }
-   
+
    /*
     * Public methods
     */
 
-   /*
+ /*
     * Access methods
     */
-
    /**
     * Gets the original array content
     *
@@ -351,13 +354,13 @@ public final class ShuffledByteArray implements AutoCloseable {
 
    /**
     * Gets an array element at a given position
-    * 
+    *
     * @param externalIndex Index of the array element
     * @return Value of the array element at the given position
-    * @throws IllegalStateException
-    * @throws ArrayIndexOutOfBoundsException 
+    * @throws IllegalStateException if array has already been destroyed
+    * @throws ArrayIndexOutOfBoundsException if index is outside of allowed bounds
     */
-   public byte getAt(int externalIndex) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+   public byte getAt(final int externalIndex) throws IllegalStateException, ArrayIndexOutOfBoundsException {
       checkStateAndExternalIndex(externalIndex);
 
       return this.byteArray[getArrayIndex(externalIndex)];
@@ -365,18 +368,18 @@ public final class ShuffledByteArray implements AutoCloseable {
 
    /**
     * Sets the array element at a given position to a given value
-    * 
+    *
     * @param externalIndex Index of the array element
     * @param newValue New value of the array element
-    * @throws IllegalStateException
-    * @throws ArrayIndexOutOfBoundsException 
+    * @throws IllegalStateException if array has already been destroyed
+    * @throws ArrayIndexOutOfBoundsException if index is outside of allowed bounds
     */
-   public void setAt(int externalIndex, byte newValue) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+   public void setAt(final int externalIndex, final byte newValue) throws IllegalStateException, ArrayIndexOutOfBoundsException {
       checkStateAndExternalIndex(externalIndex);
 
       this.byteArray[getArrayIndex(externalIndex)] = newValue;
    }
-   
+
    /**
     * Gets the real array length
     *
@@ -387,13 +390,14 @@ public final class ShuffledByteArray implements AutoCloseable {
    public int length() throws IllegalStateException {
       checkState();
 
-      return this.realLength;
+      return getRealIndex(this.storedArrayLength);
    }
 
    /**
     * Checks whether this ShuffledByteArray is valid
-    * 
-    * @return <code>True</code>, if this ShuffledByteArray is valid. <code>False</code>, if it has been deleted
+    *
+    * @return <code>True</code>, if this ShuffledByteArray is valid.
+    * <code>False</code>, if it has been deleted
     */
    public boolean isValid() {
       return this.isValid;
@@ -423,29 +427,28 @@ public final class ShuffledByteArray implements AutoCloseable {
     * destroyed.
     */
    @Override
-   public boolean equals(Object obj) throws IllegalStateException {
-      if (obj == null) {
+   public boolean equals(final Object obj) throws IllegalStateException {
+      if (obj == null)
          return false;
-      }
 
-      if (getClass() != obj.getClass()) {
+      if (getClass() != obj.getClass())
          return false;
-      }
 
       final ShuffledByteArray other = (ShuffledByteArray) obj;
       final byte[] thisClearArray = this.getData();
       final byte[] otherClearArray = other.getData();
-      boolean result = Arrays.equals(thisClearArray, otherClearArray);
+      final boolean result = Arrays.equals(thisClearArray, otherClearArray);
 
       Arrays.fill(thisClearArray, (byte) 0); // Clear sensitive data
       Arrays.fill(otherClearArray, (byte) 0); // Clear sensitive data
 
       return result;
    }
-   
+
    /*
     * Method for AutoCloseable interface
     */
+   
    /**
     * Secure deletion of shuffled array.
     *

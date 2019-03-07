@@ -20,9 +20,10 @@
  * Author: Frank Schwab, DB Systel GmbH
  *
  * Changes: 
- *     2016-09-26: V4.1.0: Created
- *     2016-11-24: V4.2.0: Make "isValid" property of underlying array publicly available.
- *     2017-12-21: V4.2.1: Added "throws" tags.
+ *     2016-09-26: V4.1.0: Created. fhs
+ *     2016-11-24: V4.2.0: Make "isValid" property of underlying array publicly available. fhs
+ *     2017-12-21: V4.2.1: Added "throws" tags. fhs
+ *     2018-08-15: V4.2.2: Added a few "finals". fhs
  */
 package dbscryptolib;
 
@@ -34,11 +35,11 @@ import java.util.Arrays;
  * data are only stored in an obfuscated form and 2. the data are cleared from
  * memory when "close" is called.
  *
- * Note: The content of the byte array can not be changed after it 
- * has been set with the constructor.
+ * Note: The content of the byte array can not be changed after it has been set
+ * with the constructor.
  *
  * @author Frank Schwab
- * @version 4.2.1
+ * @version 4.2.2
  */
 public final class ProtectedByteArray implements AutoCloseable {
 
@@ -51,7 +52,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @param arrayToProtect The byte array to protect.
     * @throws IllegalArgumentException if <code>arrayToProtect</code> is null.
     */
-   public ProtectedByteArray(byte[] arrayToProtect) throws IllegalArgumentException {
+   public ProtectedByteArray(final byte[] arrayToProtect) throws IllegalArgumentException {
       this.protectedArray = new ShuffledByteArray(arrayToProtect);
 
       this.obfuscation = createNewObfuscationArray(arrayToProtect.length);
@@ -72,7 +73,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * long enough to get <code>len</code> bytes from position
     * <code>offset</code> in array <code>arrayToProtect</code>.
     */
-   public ProtectedByteArray(byte[] arrayToProtect, int offset, int len) throws ArrayIndexOutOfBoundsException, IllegalArgumentException {
+   public ProtectedByteArray(final byte[] arrayToProtect, final int offset, final int len) throws ArrayIndexOutOfBoundsException, IllegalArgumentException {
       checkArray(arrayToProtect);
 
       checkOffsetAndLength(arrayToProtect, offset, len);
@@ -101,10 +102,9 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @param arrayToProtect Key as byte array
     * @throws IllegalArgumentException if <code>arrayToProtect</code> is null
     */
-   private void checkArray(byte[] arrayToProtect) throws IllegalArgumentException {
-      if (arrayToProtect == null) {
+   private void checkArray(final byte[] arrayToProtect) throws IllegalArgumentException {
+      if (arrayToProtect == null)
          throw new IllegalArgumentException("arrayToProtect is null");
-      }
    }
 
    /**
@@ -113,55 +113,49 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @param arrayToProtect Key as byte array
     * @param offset The offset of the data in the byte array.
     * @param len The length of the data in the byte array.
-    * @throws ArrayIndexOutOfBoundsException if <code>offset</code> or
-    * <code>len</code> are less than 0.
-    * @throws IllegalArgumentException if <code>arrayToProtect</code> is not
-    * long enough to get <code>len</code> bytes from position
+    * @throws ArrayIndexOutOfBoundsException if <code>offset</code> or <code>len</code> are less than 0.
+    * @throws IllegalArgumentException if <code>arrayToProtect</code> is not long enough to get <code>len</code> bytes from position
     * <code>offset</code> in array <code>arrayToProtect</code>.
     */
-   private void checkOffsetAndLength(byte[] arrayToProtect, int offset, int len) throws IllegalArgumentException {
-      if ((offset < 0) || (len < 0)) {
+   private void checkOffsetAndLength(final byte[] arrayToProtect, final int offset, final int len) throws IllegalArgumentException {
+      if ((offset < 0) || (len < 0))
          throw new ArrayIndexOutOfBoundsException("offset < 0 || len < 0");
-      }
 
-      if ((arrayToProtect.length - offset) < len) {
+      if ((arrayToProtect.length - offset) < len)
          throw new IllegalArgumentException("arrayToProtect too short for offset and length");
-      }
    }
 
    /*
     * Methods for obfuscation and deobfuscation
     */
-
    /**
     * Creates a new obfuscation array
-    * 
+    *
     * @param arrayLength Length of the new obfuscation array
     * @return New obfuscation array as ShuffledByteArray
     */
-   private ShuffledByteArray createNewObfuscationArray(int arrayLength) {
-      byte [] obfuscationSource = new byte [arrayLength];
+   private ShuffledByteArray createNewObfuscationArray(final int arrayLength) {
+      final byte[] obfuscationSource = new byte[arrayLength];
       final SecureRandom sprng = new SecureRandom();
-      final ShuffledByteArray result;
-      
+
       sprng.nextBytes(obfuscationSource);
-      result = new ShuffledByteArray(obfuscationSource);
+      
+      final ShuffledByteArray result = new ShuffledByteArray(obfuscationSource);
+      
       Arrays.fill(obfuscationSource, (byte) 0); // Clear sensitive data
 
       return result;
    }
-   
+
    /**
-    * Stores the source xored with the 
-    * obfuscation bytes in the protected array.
+    * Stores the source xored with the obfuscation bytes in the protected array.
     */
-   private void storeInObfuscatedArray(byte[] source) {
+   private void storeInObfuscatedArray(final byte[] source) {
       // Need to cast a byte xor to a byte as Java does not define an
       // xor operation on bytes but silently converts the bytes to
       // ints before doing the xor. One more Java stupidity.
-      for (int i = 0; i < source.length; i++) {
+      for (int i = 0; i < source.length; i++)
          this.protectedArray.setAt(i, (byte) (source[i] ^ this.obfuscation.getAt(i)));
-      }
    }
 
    /**
@@ -170,14 +164,13 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @return Byte array of clear data
     */
    private byte[] getDeObfuscatedArray() {
-      byte[] result = new byte[this.protectedArray.length()];
+      final byte[] result = new byte[this.protectedArray.length()];
 
       // Need to cast a byte xor to a byte as Java does not define an
       // xor operation on bytes but silently converts the bytes to
       // ints before doing the xor. One more Java stupidity.
-      for (int i = 0; i < this.protectedArray.length(); i++) {
+      for (int i = 0; i < this.protectedArray.length(); i++)
          result[i] = (byte) (this.protectedArray.getAt(i) ^ this.obfuscation.getAt(i));
-      }
 
       return result;
    }
@@ -185,7 +178,6 @@ public final class ProtectedByteArray implements AutoCloseable {
    /*
     * Access methods
     */
-
    /**
     * Returns the data of the byte array in the clear.
     *
@@ -194,10 +186,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * destroyed.
     */
    public byte[] getData() throws IllegalStateException {
-      // 1. Get the deobfuscated bytes
-      byte[] result = getDeObfuscatedArray();
-
-      return result;
+      return getDeObfuscatedArray();
    }
 
    /**
@@ -222,30 +211,30 @@ public final class ProtectedByteArray implements AutoCloseable {
     * destroyed.
     */
    @Override
-   public boolean equals(Object obj) throws IllegalStateException {
-      if (obj == null) {
+   public boolean equals(final Object obj) throws IllegalStateException {
+      if (obj == null)
          return false;
-      }
 
-      if (getClass() != obj.getClass()) {
+      if (getClass() != obj.getClass())
          return false;
-      }
-      
+
       final ProtectedByteArray other = (ProtectedByteArray) obj;
       final byte[] thisClearKey = this.getData();
       final byte[] otherClearKey = other.getData();
 
-      boolean result = Arrays.equals(thisClearKey, otherClearKey);
+      final boolean result = Arrays.equals(thisClearKey, otherClearKey);
 
       Arrays.fill(thisClearKey, (byte) 0);
       Arrays.fill(otherClearKey, (byte) 0);
-      
+
       return result;
    }
 
    /**
     * Check whether this <code>ProtectedByteArray</code> contains valid data
-    * @return <code>true</code>: Data are valid. <code>false</code>: Data are not valid.
+    *
+    * @return <code>true</code>: Data are valid. <code>false</code>: Data are
+    * not valid.
     */
    public boolean isValid() {
       return this.protectedArray.isValid();
