@@ -24,6 +24,7 @@
  *     2018-08-15: V1.0.1: Added a few more "finals". fhs
  *     2018-08-16: V1.0.2: Made name of SPRNG variable conform to class visible variable name. fhs
  *     2019-03-06: V1.1.0: Store array length in an obfuscated form. fhs
+ *     2019-05-17: V1.1.1: Clear data first and then set flag that it is cleared. fhs
  */
 package dbscryptolib;
 
@@ -34,7 +35,7 @@ import java.util.Arrays;
  * Stores a byte array in a shuffled form.
  *
  * @author Frank Schwab
- * @version 1.1.0
+ * @version 1.1.1
  */
 public final class ShuffledByteArray implements AutoCloseable {
 
@@ -457,9 +458,9 @@ public final class ShuffledByteArray implements AutoCloseable {
    @Override
    public void close() {
       if (this.isValid) {
-         this.isValid = false;
-
          clearData();
+
+         this.isValid = false;
       }
    }
 }
