@@ -25,6 +25,7 @@
  *     2018-08-16: V1.0.2: Made name of SPRNG variable conform to class visible variable name. fhs
  *     2019-03-06: V1.1.0: Store array length in an obfuscated form. fhs
  *     2019-05-17: V1.1.1: Clear data first and then set flag that it is cleared. fhs
+ *     2019-08-06: V1.1.2: Use SecureRandomFactory. fhs
  */
 package dbscryptolib;
 
@@ -35,7 +36,7 @@ import java.util.Arrays;
  * Stores a byte array in a shuffled form.
  *
  * @author Frank Schwab
- * @version 1.1.1
+ * @version 1.1.2
  */
 public final class ShuffledByteArray implements AutoCloseable {
 
@@ -57,9 +58,9 @@ public final class ShuffledByteArray implements AutoCloseable {
 
    /*
     * Random numbers are needed in several places so the PRNG is instantiated
-    * one time at the class level.
+    * once at the class level.
     */
-   private final SecureRandom SECURE_PRNG = new SecureRandom();
+   private final SecureRandom SECURE_PRNG = SecureRandomFactory.getSensibleInstance();
 
    /**
     * Constructor for the shuffled byte array with a source array
