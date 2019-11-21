@@ -24,7 +24,7 @@ A typical usage would be something like this:
        Arrays.fill(theKey, (byte) 0);  // Delete the key from memory. Now it is safely stored in the SecureSecretKeySpec
        ...
        // Use the SecureSecretKeySpec
-       Cipher aesCipher = Cipher.getInstance("AES");
+       Cipher aesCipher = Cipher.getInstance("AES/CBC/NoPadding");
        aesCipher.init(Cipher.ENCRYPT_MODE, mySecretKey);
        ...
     } // Here the SecureSecretKeySpec is automatically destroyed due to the AutoClosable interface
