@@ -4,7 +4,7 @@ Java's `SecretKeySpec` implementation is unsafe. It stores the key bytes in its 
 
 This makes it possible to easily find keys in a memory dump. One just has to search for the algorithm names and the keys are stored right next to them.
 
-`SecureSecretKeySpec` is a replacement for Java's SecretKeySpec. It does multiple things to enhance the security of the stored key:
+`SecureSecretKeySpec` is a drop-in replacement for Java's SecretKeySpec. It does multiple things to enhance the security of the stored key:
 
 * Implements the `AutoCloseable` interface so the key is automatically destroyed when the key is closed
 * Implements the `Destroyable` interface (unlike the original `SecretKeySpec`, this class has a working `destroy` method)
