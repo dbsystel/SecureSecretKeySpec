@@ -24,6 +24,7 @@
  *     2016-11-24: V4.2.0: Make "isValid" property of underlying array publicly available. fhs
  *     2017-12-21: V4.2.1: Added "throws" tags. fhs
  *     2018-08-15: V4.2.2: Added a few "finals". fhs
+ *     2020-03-10: V4.3.0: Use "SecureRandomFactory". fhs
  */
 package dbscryptolib;
 
@@ -39,7 +40,7 @@ import java.util.Arrays;
  * with the constructor.
  *
  * @author Frank Schwab
- * @version 4.2.2
+ * @version 4.3.0
  */
 public final class ProtectedByteArray implements AutoCloseable {
 
@@ -137,7 +138,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     */
    private ShuffledByteArray createNewObfuscationArray(final int arrayLength) {
       final byte[] obfuscationSource = new byte[arrayLength];
-      final SecureRandom sprng = new SecureRandom();
+      final SecureRandom sprng = SecureRandomFactory.getSensibleSingleton();
 
       sprng.nextBytes(obfuscationSource);
 

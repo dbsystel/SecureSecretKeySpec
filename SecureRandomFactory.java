@@ -22,6 +22,7 @@
  * Changes:
  *     2019-08-03: V1.0.0: Created. fhs
  *     2019-08-05: V1.1.0: Cache SecureRandom algorithm name. Change method name. fhs
+ *     2019-08-23: V1.2.0: Make it possible to use a SecureRandom singleton. fhs
  */
 package dbscryptolib;
 
@@ -34,10 +35,12 @@ import java.util.Set;
  * A class to get the most secure SecureRandom instance
  *
  * @author Frank Schwab
- * @version 1.1.0
+ * @version 1.2.0
  */
+@SuppressWarnings("ConstantConditions")
 public class SecureRandomFactory {
    private static String m_SecureRandomAlgorithmName;
+   private static SecureRandom m_Singleton;
 
    /**
     * Get optimal SecureRandom provider
@@ -109,5 +112,20 @@ public class SecureRandomFactory {
       }
 
       return result;
+   }
+
+   /**
+    * Get optimal SecureRandom singleton instance depending on the platform.
+    *
+    * <p>
+    * This method retuns the default SecureRandom instance, if there is no optimal one.
+    * </p>
+    * @return Optimal SecureRandom singleton instance
+    */
+   public static SecureRandom getSensibleSingleton() {
+      if (m_Singleton == null)
+         m_Singleton = getSensibleInstance();
+
+      return m_Singleton;
    }
 }

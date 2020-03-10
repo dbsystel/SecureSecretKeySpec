@@ -26,6 +26,7 @@
  *     2019-03-06: V1.1.0: Store array length in an obfuscated form. fhs
  *     2019-05-17: V1.1.1: Clear data first and then set flag that it is cleared. fhs
  *     2019-08-06: V1.1.2: Use SecureRandomFactory. fhs
+ *     2019-08-23: V1.1.3: Use SecureRandom singleton. fhs
  */
 package dbscryptolib;
 
@@ -36,31 +37,47 @@ import java.util.Arrays;
  * Stores a byte array in a shuffled form.
  *
  * @author Frank Schwab
- * @version 1.1.2
+ * @version 1.1.3
  */
 public final class ShuffledByteArray implements AutoCloseable {
 
    /*
     * Instance variables
     */
+
+   /**
+    * Byte array to store the data in
+    */
    private byte[] byteArray;
 
+   /**
+    * Index array into {@code byteArray}
+    */
    private int[] indexArray;
    private int indexOffset;
    private int indexFactor;
    private int indexStart;
 
+   /**
+    * Length of data in {@code byteArray} in obfuscated form
+    */
    private int storedArrayLength;
 
+   /**
+    * Hash code of data in {@code byteArray}
+    */
    private int hashCode;
 
+   /**
+    * Is data in {@code byteArray} valid?
+    */
    private boolean isValid;
 
    /*
     * Random numbers are needed in several places so the PRNG is instantiated
     * once at the class level.
     */
-   private final SecureRandom SECURE_PRNG = SecureRandomFactory.getSensibleInstance();
+   private final SecureRandom SECURE_PRNG = SecureRandomFactory.getSensibleSingleton();
 
    /**
     * Constructor for the shuffled byte array with a source array
@@ -120,7 +137,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     */
    private void checkExternalIndex(final int externalIndex) throws ArrayIndexOutOfBoundsException {
       if ((externalIndex < 0) || (externalIndex >= getRealIndex(this.storedArrayLength)))
-         throw new ArrayIndexOutOfBoundsException("Illegal index " + Integer.toString(externalIndex));
+         throw new ArrayIndexOutOfBoundsException("Illegal index " + externalIndex);
    }
 
    /**

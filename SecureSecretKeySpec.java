@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, DB Systel GmbH
+ * Copyright (c) 2020, DB Systel GmbH
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -23,10 +23,13 @@
  *     2016-09-26: V2.0.0: Use ProtectedByteArray. fhs
  *     2016-11-24: V2.1.0: Implement "javax.security.auth.Destroyable" interface. fhs
  *     2018-08-15: V2.1.1: Added a few "finals". fhs
+ *     2020-03-10: V2.2.0: Make comparable with {@code SecretkeySpec}, constructor argument checks,
+ *                         throw IllegalStateExcpetions when instance has been closed or destroyed. fhs
  */
 package dbscryptolib;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.Destroyable;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
@@ -40,12 +43,15 @@ import java.util.Arrays;
  * <code>SecretKeySpec</code>.
  *
  * @author Frank Schwab
- * @version 2.1.1
+ * @version 2.2.0
  */
 public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, AutoCloseable {
 
    private final ProtectedByteArray key;
    private final ProtectedByteArray algorithm;
+
+   private final Class thisClass = this.getClass();
+   private Class compatibleClass;
 
    /**
     * Creates a new <code>SecureSecretKeySpec</code> for the specified key data
@@ -53,15 +59,21 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     *
     * @param key the key data.
     * @param algorithm the algorithm name.
-    * @throws IllegalArgumentException if the key data or the algorithm name is
-    * null.
+    * @throws IllegalArgumentException if the key data or the algorithm name is null.
     */
    public SecureSecretKeySpec(final byte[] key, final String algorithm) {
-      checkAlgorithm(algorithm);
+      // I have to duplicate all the functionality of the other constructor just
+      // because of the Java strangeness that a call to another constructor *must*
+      // be the first statement in a constructor. This does not make sense, at all!
+      // Real object oriented languages do not have this limitation.
+
+      checkKeyAndAlgorithm(key, algorithm);
 
       this.key = new ProtectedByteArray(key);
 
       this.algorithm = createNewAlgorithmArray(algorithm);
+
+      setCompatibleClass();
    }
 
    /**
@@ -73,35 +85,90 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @param offset the offset.
     * @param len the size of the key data.
     * @param algorithm the algorithm name.
+    * @throws ArrayIndexOutOfBoundsException if <code>offset</code> or <code>len</code> is negative.
     * @throws IllegalArgumentException if the key data or the algorithm name is
     * null, or <code>offset</code> and <code>len</code> do not specify a valid
     * chunk in the buffer <code>key</code>.
-    * @throws ArrayIndexOutOfBoundsException if <code>offset</code> or
-    * <code>len</code> is negative.
     */
-   public SecureSecretKeySpec(final byte[] key, final int offset, final int len, final String algorithm) {
-      checkAlgorithm(algorithm);
+   public SecureSecretKeySpec(final byte[] key, final int offset, final int len, final String algorithm) throws ArrayIndexOutOfBoundsException, IllegalArgumentException {
+      checkKeyAndAlgorithm(key, algorithm);
 
       this.key = new ProtectedByteArray(key, offset, len);
 
       this.algorithm = createNewAlgorithmArray(algorithm);
+
+      setCompatibleClass();
+   }
+
+   /*
+    * Helper methods for the constructors
+    */
+
+   /**
+    * Checks whether the key and the algorithm are valid
+    *
+    * @param key Key array
+    * @param algorithm algorithm name as string
+    * @throws IllegalArgumentException if {@code algorithm} or {@code key} is null or empty
+    */
+   private void checkKeyAndAlgorithm(final byte[] key, final String algorithm) throws IllegalArgumentException {
+      checkKey(key);
+      checkAlgorithm(algorithm);
    }
 
    /**
     * Checks whether algorithm is valid
     *
-    * @param algorithm Algorithm name as string
-    * @throws IllegalArgumentException if <code>key</code> is null or
-    * <code>algorithm</code> is null
+    * @param algorithm algorithm name as string
+    * @throws IllegalArgumentException if {@code algorithm} is null or empty
     */
    private void checkAlgorithm(final String algorithm) throws IllegalArgumentException {
       if (algorithm == null)
          throw new IllegalArgumentException("algorithm == null");
+
+      if (algorithm.length() == 0)
+         throw new IllegalArgumentException("algorithm is empty");
+   }
+
+   /**
+    * Checks whether algorithm is valid
+    *
+    * @param key Key array
+    * @throws IllegalArgumentException if {@code key} is null or empty
+    */
+   private void checkKey(final byte[] key) throws IllegalArgumentException {
+      if (key == null)
+         throw new IllegalArgumentException("key == null");
+
+      if (key.length == 0)
+         throw new IllegalArgumentException("key is empty");
+   }
+
+   /**
+    * Set the compatible class {@code SecretKeySpec} for {unsage in the @code equals} method
+    */
+   private void setCompatibleClass() {
+      // This is instantiated to get the class object without having to call {@code Class.forName()} which
+      // needs handling of a {@code ClassNotFound} exception.
+      final SecretKeySpec tempSpec = new SecretKeySpec(new byte[1], "");
+
+      compatibleClass = tempSpec.getClass();
    }
 
    /*
     * Private methods
     */
+   /**
+    * Checks whether the shuffled byte array is in a valid state
+    *
+    * @throws IllegalStateException if the shuffled array has already been
+    * destroyed
+    */
+   private void checkState() throws IllegalStateException {
+      if (!this.key.isValid())
+         throw new IllegalStateException("SecureSecretKeySpec has already been destroyed");
+   }
+
    /**
     * Creates a new ProtectedByteArray for the algorithm name
     *
@@ -128,6 +195,8 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     */
    @Override
    public String getAlgorithm() {
+      checkState();
+
       return new String(algorithm.getData());
    }
 
@@ -138,6 +207,8 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     */
    @Override
    public String getFormat() {
+      checkState();
+
       return "RAW";
    }
 
@@ -148,6 +219,8 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     */
    @Override
    public byte[] getEncoded() {
+      checkState();
+
       return this.key.getData();
    }
 
@@ -158,6 +231,8 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     */
    @Override
    public int hashCode() {
+      checkState();
+
       // Java does not indicate an over- or underflow so it is safe
       // to multiply with a number that will overflow on multiplication
       return this.key.hashCode() * 79 + this.algorithm.hashCode();
@@ -173,23 +248,32 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     */
    @Override
    public boolean equals(final Object obj) {
+      checkState();
+
       if (obj == null)
          return false;
 
-      if (getClass() != obj.getClass())
+      final Class objectClass = obj.getClass();
+
+      if ((objectClass != thisClass) &&
+          (objectClass != compatibleClass))
          return false;
 
-      final SecureSecretKeySpec other = (SecureSecretKeySpec) obj;
-      if (!this.key.equals(other.key))
-         return false;
+      final SecretKey other = (SecretKey) obj;
+      final byte[] thisKey = this.getEncoded();
+      final byte[] otherKey = other.getEncoded();
 
-      return this.getAlgorithm().equalsIgnoreCase(other.getAlgorithm());
+      final boolean result = Arrays.equals(thisKey, otherKey);
+
+      Arrays.fill(thisKey, (byte) 0);
+      Arrays.fill(otherKey, (byte) 0);
+
+      return (result & this.getAlgorithm().equalsIgnoreCase(other.getAlgorithm()));
    }
 
    /*
     * Method for AutoCloseable interface
     */
-   
    /**
     * Secure deletion of key and algorithm
     *
@@ -221,5 +305,14 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
    @Override
    public boolean isDestroyed() {
       return !this.key.isValid();
+   }
+   /**
+    * Checks whether this SecureSecretKeySpec is valid
+    *
+    * @return <code>True</code>, if this ShuffledByteArray is valid.
+    * <code>False</code>, if it has been deleted
+    */
+   public boolean isValid() {
+      return this.key.isValid();
    }
 }
