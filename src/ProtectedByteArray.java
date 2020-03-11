@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, DB Systel GmbH
+ * Copyright (c) 2020, DB Systel GmbH
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -25,6 +25,7 @@
  *     2017-12-21: V4.2.1: Added "throws" tags. fhs
  *     2018-08-15: V4.2.2: Added a few "finals". fhs
  *     2020-03-10: V4.3.0: Use "SecureRandomFactory". fhs
+ *     2020-03-10: V4.4.0: Added "length" method and checks of state. fhs
  */
 package dbscryptolib;
 
@@ -40,7 +41,7 @@ import java.util.Arrays;
  * with the constructor.
  *
  * @author Frank Schwab
- * @version 4.3.0
+ * @version 4.4.0
  */
 public final class ProtectedByteArray implements AutoCloseable {
 
