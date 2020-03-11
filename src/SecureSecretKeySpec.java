@@ -25,6 +25,7 @@
  *     2018-08-15: V2.1.1: Added a few "finals". fhs
  *     2020-03-10: V2.2.0: Make comparable with {@code SecretkeySpec}, constructor argument checks,
  *                         throw IllegalStateExcpetions when instance has been closed or destroyed. fhs
+ *     2020-03-11: V2.2.1: Added some "throws" statements. fhs
  */
 package dbscryptolib;
 
@@ -43,7 +44,7 @@ import java.util.Arrays;
  * <code>SecretKeySpec</code>.
  *
  * @author Frank Schwab
- * @version 2.2.0
+ * @version 2.2.1
  */
 public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, AutoCloseable {
 
@@ -62,10 +63,10 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalArgumentException if the key data or the algorithm name is null.
     */
    public SecureSecretKeySpec(final byte[] key, final String algorithm) {
-      // I have to duplicate all the functionality of the other constructor just
-      // because of the Java strangeness that a call to another constructor *must*
-      // be the first statement in a constructor. This does not make sense, at all!
-      // Real object oriented languages do not have this limitation.
+      // All the functionality of the other constructor has to be duplicated here
+      // just because of the Java strangeness that a call to another constructor
+      // *must* be the first statement in a constructor. This does not make sense,
+      // at all! Real object oriented languages do not have this limitation.
 
       checkKeyAndAlgorithm(key, algorithm);
 
@@ -161,8 +162,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
    /**
     * Checks whether the shuffled byte array is in a valid state
     *
-    * @throws IllegalStateException if the shuffled array has already been
-    * destroyed
+    * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed
     */
    private void checkState() throws IllegalStateException {
       if (!this.key.isValid())
@@ -192,9 +192,10 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * Returns the algorithm name.
     *
     * @return the algorithm name.
+    * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public String getAlgorithm() {
+   public String getAlgorithm() throws IllegalStateException  {
       checkState();
 
       return new String(algorithm.getData());
@@ -204,9 +205,10 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * Returns the name of the format used to encode the key.
     *
     * @return the format name "RAW".
+    * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public String getFormat() {
+   public String getFormat() throws IllegalStateException {
       checkState();
 
       return "RAW";
@@ -216,9 +218,10 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * Returns the encoded form of this secret key.
     *
     * @return the encoded form of this secret key.
+    * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public byte[] getEncoded() {
+   public byte[] getEncoded() throws IllegalStateException {
       checkState();
 
       return this.key.getData();
@@ -228,9 +231,10 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * Returns the hash code of this <code>SecureSecretKeySpec</code> instance.
     *
     * @return the hash code.
+    * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public int hashCode() {
+   public int hashCode() throws IllegalStateException {
       checkState();
 
       // Java does not indicate an over- or underflow so it is safe
@@ -245,9 +249,10 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @param obj the object to compare.
     * @return true if the algorithm name and key of both object are equal,
     * otherwise false.
+    * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public boolean equals(final Object obj) {
+   public boolean equals(final Object obj) throws IllegalStateException {
       checkState();
 
       if (obj == null)
@@ -306,6 +311,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
    public boolean isDestroyed() {
       return !this.key.isValid();
    }
+
    /**
     * Checks whether this SecureSecretKeySpec is valid
     *
