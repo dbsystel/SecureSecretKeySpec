@@ -1,25 +1,25 @@
 /*
  * Copyright (c) 2019, DB Systel GmbH
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * 
+ *
  * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
  * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
  * SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Frank Schwab, DB Systel GmbH
  *
- * Changes: 
+ * Changes:
  *     2015-09-26: V1.0.0: Created. fhs
  *     2018-08-15: V1.0.1: Added a few more "finals". fhs
  *     2018-08-16: V1.0.2: Made name of SPRNG variable conform to class visible variable name. fhs
@@ -32,6 +32,7 @@ package dbscryptolib;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Stores a byte array in a shuffled form.
@@ -86,10 +87,10 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @throws IllegalArgumentException if {@code sourceArray} is {@code null}
     */
    public ShuffledByteArray(final byte[] sourceArray) throws IllegalArgumentException {
-      checkArray(sourceArray);
+      Objects.requireNonNull(sourceArray, "Source array is null");
 
-      this.initializeDataStructures(sourceArray.length);
-      this.setValues(sourceArray);
+      initializeDataStructures(sourceArray.length);
+      setValues(sourceArray);
 
       this.hashCode = Arrays.hashCode(sourceArray);   // Calculate hash code of source only once
 
@@ -103,26 +104,11 @@ public final class ShuffledByteArray implements AutoCloseable {
    /*
     * Check methods
     */
-  
-   /**
-    * Checks whether array is valid
-    * <p>
-    * Note: An array length of 0 is allowed.
-    * </p>
-    *
-    * @param sourceArray A byte array
-    * @throws IllegalArgumentException if <code>sourceArray</code> is null
-    */
-   private void checkArray(final byte[] sourceArray) throws IllegalArgumentException {
-      if (sourceArray == null)
-         throw new IllegalArgumentException("sourceArray is null");
-   }
 
    /**
     * Checks whether the shuffled byte array is in a valid state
     *
-    * @throws IllegalStateException if the shuffled array has already been
-    * destroyed
+    * @throws IllegalStateException if the shuffled array has already been destroyed
     */
    private void checkState() throws IllegalStateException {
       if (!this.isValid)
@@ -144,8 +130,10 @@ public final class ShuffledByteArray implements AutoCloseable {
     * Checks the state and then the validity of the given external index
     *
     * @param externalIndex Index value to be checked
+    * @throws ArrayIndexOutOfBoundsException if index is out of array bounds
+    * @throws IllegalStateException          if the shuffled array has already been destroyed
     */
-   private void checkStateAndExternalIndex(final int externalIndex) {
+   private void checkStateAndExternalIndex(final int externalIndex) throws ArrayIndexOutOfBoundsException, IllegalStateException {
       checkState();
       checkExternalIndex(externalIndex);
    }
@@ -153,6 +141,7 @@ public final class ShuffledByteArray implements AutoCloseable {
    /*
     * Methods for data structure initialization and maintenance
     */
+
    /**
     * Calculates the array size required for storing the data. The stored array
     * has at least twice the size of the original array to be able to set a
@@ -180,7 +169,7 @@ public final class ShuffledByteArray implements AutoCloseable {
    /**
     * Gets the factor for index obfuscation
     *
-    * @param offset Offset for indices
+    * @param offset      Offset for indices
     * @param arrayLength Length of the array
     * @return Factor for indices
     */
@@ -238,7 +227,7 @@ public final class ShuffledByteArray implements AutoCloseable {
 
    /**
     * Reorganizes the index array for reordering of the byte array.
-    *
+    * <p>
     * This includes setting a random start position in the index array.
     */
    private void reorganizeIndexArray() {
@@ -327,6 +316,7 @@ public final class ShuffledByteArray implements AutoCloseable {
    /*
     * Methods for accessing data from or to byte array
     */
+
    /**
     * Sets the destination array to the values in the source array.
     *
@@ -355,15 +345,16 @@ public final class ShuffledByteArray implements AutoCloseable {
     * Public methods
     */
 
- /*
+   /*
     * Access methods
     */
+
    /**
     * Gets the original array content
     *
     * @return Original array content
     * @throws IllegalStateException if the shuffled array has already been
-    * destroyed
+    *                               destroyed
     */
    public byte[] getData() throws IllegalStateException {
       checkState();
@@ -376,10 +367,10 @@ public final class ShuffledByteArray implements AutoCloseable {
     *
     * @param externalIndex Index of the array element
     * @return Value of the array element at the given position
-    * @throws IllegalStateException if array has already been destroyed
     * @throws ArrayIndexOutOfBoundsException if index is outside of allowed bounds
+    * @throws IllegalStateException          if array has already been destroyed
     */
-   public byte getAt(final int externalIndex) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+   public byte getAt(final int externalIndex) throws ArrayIndexOutOfBoundsException, IllegalStateException {
       checkStateAndExternalIndex(externalIndex);
 
       return this.byteArray[getArrayIndex(externalIndex)];
@@ -389,11 +380,11 @@ public final class ShuffledByteArray implements AutoCloseable {
     * Sets the array element at a given position to a given value
     *
     * @param externalIndex Index of the array element
-    * @param newValue New value of the array element
-    * @throws IllegalStateException if array has already been destroyed
+    * @param newValue      New value of the array element
     * @throws ArrayIndexOutOfBoundsException if index is outside of allowed bounds
+    * @throws IllegalStateException          if array has already been destroyed
     */
-   public void setAt(final int externalIndex, final byte newValue) throws IllegalStateException, ArrayIndexOutOfBoundsException {
+   public void setAt(final int externalIndex, final byte newValue) throws ArrayIndexOutOfBoundsException, IllegalStateException {
       checkStateAndExternalIndex(externalIndex);
 
       this.byteArray[getArrayIndex(externalIndex)] = newValue;
@@ -404,7 +395,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     *
     * @return Real length of stored array
     * @throws IllegalStateException if the shuffled array has already been
-    * destroyed
+    *                               destroyed
     */
    public int length() throws IllegalStateException {
       checkState();
@@ -427,7 +418,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     *
     * @return The hash code.
     * @throws IllegalStateException if this shuffled byte array has already been
-    * destroyed.
+    *                               destroyed.
     */
    @Override
    public int hashCode() throws IllegalStateException {
@@ -443,7 +434,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @param obj The object to compare.
     * @return true if byte arrays of both object are equal, otherwise false.
     * @throws IllegalStateException if the protected array has already been
-    * destroyed.
+    *                               destroyed.
     */
    @Override
    public boolean equals(final Object obj) throws IllegalStateException {
@@ -467,10 +458,10 @@ public final class ShuffledByteArray implements AutoCloseable {
    /*
     * Method for AutoCloseable interface
     */
-   
+
    /**
     * Secure deletion of shuffled array.
-    *
+    * <p>
     * This method is idempotent and never throws an exception.
     */
    @Override

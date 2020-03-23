@@ -73,8 +73,8 @@ public class TestShuffledByteArray {
 
          fail(EXPECTED_EXCEPTION);
       }
-      catch (IllegalArgumentException e) {
-         assertEquals("Exception: " + e.toString(), "sourceArray is null", e.getMessage());
+      catch (NullPointerException e) {
+         assertEquals("Exception: " + e.toString(), "Source array is null", e.getMessage());
       }
       catch (Exception e) {
          e.printStackTrace();
@@ -159,10 +159,10 @@ public class TestShuffledByteArray {
       final ShuffledByteArray sba1 = new ShuffledByteArray(ba);
       final ShuffledByteArray sba2 = new ShuffledByteArray(ba);
 
-      assertTrue("ShuffledByteArray are not equal when they should be", sba1.equals(sba2));
+      assertEquals("ShuffledByteArray are not equal when they should be", sba1, sba2);
       assertEquals("ShuffledByteArray do not have identical hash codes", sba1.hashCode(), sba2.hashCode());
 
       final ShuffledByteArray sba3 = new ShuffledByteArray(new byte[32]);
-      assertFalse("ShuffledByteArray are equal when they should not be (different keys)", sba1.equals(sba3));
+      assertNotEquals("ShuffledByteArray are equal when they should not be (different keys)", sba1, sba3);
    }
 }

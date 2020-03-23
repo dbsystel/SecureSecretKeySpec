@@ -1,31 +1,32 @@
 /*
  * Copyright (c) 2020, DB Systel GmbH
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * 
+ *
  * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * 
+ *
  * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
  * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
  * SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * Author: Frank Schwab, DB Systel GmbH
  *
- * Changes: 
+ * Changes:
  *     2016-09-26: V2.0.0: Use ProtectedByteArray. fhs
  *     2016-11-24: V2.1.0: Implement "javax.security.auth.Destroyable" interface. fhs
  *     2018-08-15: V2.1.1: Added a few "finals". fhs
  *     2020-03-10: V2.2.0: Make comparable with {@code SecretkeySpec}, constructor argument checks,
  *                         throw IllegalStateExcpetions when instance has been closed or destroyed. fhs
  *     2020-03-11: V2.2.1: Added some "throws" statements. fhs
+ *     2020-03-13: V2.3.0: Added checks for null. fhs
  */
 package dbscryptolib;
 
@@ -34,17 +35,18 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.Destroyable;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * A key specification for a <code>SecretKey</code> and also a secret key
  * implementation that is provider-independent. It can be used for raw secret
  * keys that can be specified as <code>byte[]</code>.
- *
+ * <p>
  * It is intended to be used as a drop-in replacement for
  * <code>SecretKeySpec</code>.
  *
  * @author Frank Schwab
- * @version 2.2.1
+ * @version 2.3.0
  */
 public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, AutoCloseable {
 
@@ -58,7 +60,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * Creates a new <code>SecureSecretKeySpec</code> for the specified key data
     * and algorithm name.
     *
-    * @param key the key data.
+    * @param key       the key data.
     * @param algorithm the algorithm name.
     * @throws IllegalArgumentException if the key data or the algorithm name is null.
     */
@@ -82,14 +84,14 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * specified buffer <code>key</code> starting at <code>offset</code> with
     * length <code>len</code> and the specified <code>algorithm</code> name.
     *
-    * @param key the key data.
-    * @param offset the offset.
-    * @param len the size of the key data.
+    * @param key       the key data.
+    * @param offset    the offset.
+    * @param len       the size of the key data.
     * @param algorithm the algorithm name.
-    * @throws ArrayIndexOutOfBoundsException if <code>offset</code> or <code>len</code> is negative.
-    * @throws IllegalArgumentException if the key data or the algorithm name is
-    * null, or <code>offset</code> and <code>len</code> do not specify a valid
-    * chunk in the buffer <code>key</code>.
+    * @throws ArrayIndexOutOfBoundsException if {@code offset} or {@code len} is negative.
+    * @throws IllegalArgumentException       if {@code key} or {@code algorithm} is empty or {@code offset} and {@code len}
+    *                                        do not specify a valid chunk in the {@code key}.
+    * @throws NullPointerException           if {@code algorithm} or {@code key} is null
     */
    public SecureSecretKeySpec(final byte[] key, final int offset, final int len, final String algorithm) throws ArrayIndexOutOfBoundsException, IllegalArgumentException {
       checkKeyAndAlgorithm(key, algorithm);
@@ -108,11 +110,12 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
    /**
     * Checks whether the key and the algorithm are valid
     *
-    * @param key Key array
+    * @param key       Key array
     * @param algorithm algorithm name as string
-    * @throws IllegalArgumentException if {@code algorithm} or {@code key} is null or empty
+    * @throws IllegalArgumentException if {@code algorithm} or {@code key} is empty
+    * @throws NullPointerException     if {@code algorithm} or {@code key} is null
     */
-   private void checkKeyAndAlgorithm(final byte[] key, final String algorithm) throws IllegalArgumentException {
+   private void checkKeyAndAlgorithm(final byte[] key, final String algorithm) throws IllegalArgumentException, NullPointerException {
       checkKey(key);
       checkAlgorithm(algorithm);
    }
@@ -121,28 +124,28 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * Checks whether algorithm is valid
     *
     * @param algorithm algorithm name as string
-    * @throws IllegalArgumentException if {@code algorithm} is null or empty
+    * @throws IllegalArgumentException if {@code algorithm} is empty
+    * @throws NullPointerException     if {@code algorithm} is null
     */
-   private void checkAlgorithm(final String algorithm) throws IllegalArgumentException {
-      if (algorithm == null)
-         throw new IllegalArgumentException("algorithm == null");
+   private void checkAlgorithm(final String algorithm) throws IllegalArgumentException, NullPointerException {
+      Objects.requireNonNull(algorithm, "Algorithm is null");
 
       if (algorithm.length() == 0)
-         throw new IllegalArgumentException("algorithm is empty");
+         throw new IllegalArgumentException("Algorithm is empty");
    }
 
    /**
     * Checks whether algorithm is valid
     *
     * @param key Key array
-    * @throws IllegalArgumentException if {@code key} is null or empty
+    * @throws IllegalArgumentException if {@code key} is empty
+    * @throws NullPointerException     if {@code key} is null
     */
-   private void checkKey(final byte[] key) throws IllegalArgumentException {
-      if (key == null)
-         throw new IllegalArgumentException("key == null");
+   private void checkKey(final byte[] key) throws IllegalArgumentException, NullPointerException {
+      Objects.requireNonNull(key, "Key is null");
 
       if (key.length == 0)
-         throw new IllegalArgumentException("key is empty");
+         throw new IllegalArgumentException("Key is empty");
    }
 
    /**
@@ -159,6 +162,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
    /*
     * Private methods
     */
+
    /**
     * Checks whether the shuffled byte array is in a valid state
     *
@@ -188,6 +192,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
    /*
     * Interface methods
     */
+
    /**
     * Returns the algorithm name.
     *
@@ -195,7 +200,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public String getAlgorithm() throws IllegalStateException  {
+   public String getAlgorithm() throws IllegalStateException {
       checkState();
 
       return new String(algorithm.getData());
@@ -261,7 +266,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
       final Class objectClass = obj.getClass();
 
       if ((objectClass != thisClass) &&
-          (objectClass != compatibleClass))
+               (objectClass != compatibleClass))
          return false;
 
       final SecretKey other = (SecretKey) obj;
@@ -279,9 +284,10 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
    /*
     * Method for AutoCloseable interface
     */
+
    /**
     * Secure deletion of key and algorithm
-    *
+    * <p>
     * This method is idempotent and never throws an exception.
     */
    @Override
@@ -293,10 +299,10 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
    /*
     * Methods for Destroyable interface
     */
-   
+
    /**
     * Secure destruction of secret key spec
-    *
+    * <p>
     * This method is idempotent and never throws an exception.
     */
    @Override

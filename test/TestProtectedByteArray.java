@@ -73,8 +73,8 @@ public class TestProtectedByteArray {
 
          fail(EXPECTED_EXCEPTION);
       }
-      catch (IllegalArgumentException e) {
-         assertEquals("Exception: " + e.toString(), "sourceArray is null", e.getMessage());
+      catch (NullPointerException e) {
+         assertEquals("Exception: " + e.toString(), "Array to protect is null", e.getMessage());
       }
       catch (Exception e) {
          e.printStackTrace();
@@ -139,10 +139,10 @@ public class TestProtectedByteArray {
       final ProtectedByteArray pba1 = new ProtectedByteArray(ba);
       final ProtectedByteArray pba2 = new ProtectedByteArray(ba);
 
-      assertTrue("ProtectedByteArray are not equal when they should be", pba1.equals(pba2));
+      assertEquals("ProtectedByteArray are not equal when they should be", pba1, pba2);
       assertEquals("ProtectedByteArray do not have identical hash codes", pba1.hashCode(), pba2.hashCode());
 
       final ProtectedByteArray pba3 = new ProtectedByteArray(new byte[32]);
-      assertFalse("ProtectedByteArray are equal when they should not be (different keys)", pba1.equals(pba3));
+      assertNotEquals("ProtectedByteArray are equal when they should not be (different keys)", pba1, pba3);
    }
 }

@@ -89,6 +89,7 @@ public class SecureRandomFactory {
     * <p>
     * This method retuns the default SecureRandom instance, if there is no optimal one.
     * </p>
+    *
     * @return Optimal SecureRandom instance
     */
    public static SecureRandom getSensibleInstance() {
@@ -118,8 +119,9 @@ public class SecureRandomFactory {
     * Get optimal SecureRandom singleton instance depending on the platform.
     *
     * <p>
-    * This method retuns the default SecureRandom instance, if there is no optimal one.
+    * This method returns the default SecureRandom instance, if there is no optimal one.
     * </p>
+    *
     * @return Optimal SecureRandom singleton instance
     */
    public static SecureRandom getSensibleSingleton() {

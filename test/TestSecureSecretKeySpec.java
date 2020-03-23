@@ -73,8 +73,8 @@ public class TestSecureSecretKeySpec {
 
          fail(EXPECTED_EXCEPTION);
       }
-      catch (IllegalArgumentException e) {
-         assertEquals("Exception: " + e.toString(), "key == null", e.getMessage());
+      catch (NullPointerException e) {
+         assertEquals("Exception: " + e.toString(), "Key is null", e.getMessage());
       }
       catch (Exception e) {
          e.printStackTrace();
@@ -89,8 +89,8 @@ public class TestSecureSecretKeySpec {
 
          fail(EXPECTED_EXCEPTION);
       }
-      catch (IllegalArgumentException e) {
-         assertEquals("Exception: " + e.toString(), "key == null", e.getMessage());
+      catch (NullPointerException e) {
+         assertEquals("Exception: " + e.toString(), "Key is null", e.getMessage());
       }
       catch (Exception e) {
          e.printStackTrace();
@@ -105,8 +105,8 @@ public class TestSecureSecretKeySpec {
 
          fail(EXPECTED_EXCEPTION);
       }
-      catch (IllegalArgumentException e) {
-      assertEquals("Exception: " + e.toString(), "algorithm == null", e.getMessage());
+      catch (NullPointerException e) {
+      assertEquals("Exception: " + e.toString(), "Algorithm is null", e.getMessage());
       }
       catch (Exception e) {
          e.printStackTrace();
@@ -122,7 +122,7 @@ public class TestSecureSecretKeySpec {
          fail(EXPECTED_EXCEPTION);
       }
       catch (IllegalArgumentException e) {
-         assertEquals("Exception: " + e.toString(), "algorithm is empty", e.getMessage());
+         assertEquals("Exception: " + e.toString(), "Algorithm is empty", e.getMessage());
       }
       catch (Exception e) {
          e.printStackTrace();
@@ -181,10 +181,10 @@ public class TestSecureSecretKeySpec {
       final SecureSecretKeySpec spec3 = new SecureSecretKeySpec(new byte[1], ALGORITHM_NAME);
       final SecureSecretKeySpec spec4 = new SecureSecretKeySpec(key, OTHER_ALGORITHM_NAME);
 
-      assertTrue("SecureSecretsKeySpecs are not equal when they should be", spec1.equals(spec2));
+      assertEquals("SecureSecretsKeySpecs are not equal when they should be", spec1, spec2);
       assertEquals("SecureSecretsKeySpecs do not have identical hash codes", spec1.hashCode(), spec2.hashCode());
-      assertFalse("SecureSecretsKeySpecs are equal when they should not be (different keys)", spec1.equals(spec3));
-      assertFalse("SecureSecretsKeySpecs are equal when they should not be (different algorithms)", spec1.equals(spec4));
+      assertNotEquals("SecureSecretsKeySpecs are equal when they should not be (different keys)", spec1, spec3);
+      assertNotEquals("SecureSecretsKeySpecs are equal when they should not be (different algorithms)", spec1, spec4);
    }
 
    @Test
@@ -198,8 +198,8 @@ public class TestSecureSecretKeySpec {
       final SecretKeySpec spec3 = new SecretKeySpec(new byte[1], ALGORITHM_NAME);
       final SecretKeySpec spec4 = new SecretKeySpec(key, OTHER_ALGORITHM_NAME);
 
-      assertTrue("SecureSecretsKeySpecs are not equal when they should be", spec1.equals(spec2));
-      assertFalse("SecureSecretsKeySpecs are equal when they should not be (different keys)", spec1.equals(spec3));
-      assertFalse("SecureSecretsKeySpecs are equal when they should not be (different algorithms)", spec1.equals(spec4));
+      assertEquals("SecureSecretsKeySpecs are not equal when they should be", spec1, spec2);
+      assertNotEquals("SecureSecretsKeySpecs are equal when they should not be (different keys)", spec1, spec3);
+      assertNotEquals("SecureSecretsKeySpecs are equal when they should not be (different algorithms)", spec1, spec4);
    }
 }
