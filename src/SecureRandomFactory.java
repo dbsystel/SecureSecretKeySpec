@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, DB Systel GmbH
+ * Copyright (c) 2020, DB Systel GmbH
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -23,6 +23,7 @@
  *     2019-08-03: V1.0.0: Created. fhs
  *     2019-08-05: V1.1.0: Cache SecureRandom algorithm name. Change method name. fhs
  *     2019-08-23: V1.2.0: Make it possible to use a SecureRandom singleton. fhs
+ *     2020-03-23: V1.3.0: Restructured source code according to DBS programming guidelines. fhs
  */
 package dbscryptolib;
 
@@ -35,12 +36,69 @@ import java.util.Set;
  * A class to get the most secure SecureRandom instance
  *
  * @author Frank Schwab
- * @version 1.2.0
+ * @version 1.3.0
  */
-@SuppressWarnings("ConstantConditions")
 public class SecureRandomFactory {
+   //******************************************************************
+   // Instance variables
+   //******************************************************************
+
    private static String m_SecureRandomAlgorithmName;
    private static SecureRandom m_Singleton;
+
+
+   //******************************************************************
+   // Public methods
+   //******************************************************************
+
+   /**
+    * Get optimal SecureRandom instance depending on the platform.
+    *
+    * <p>This method returns the default SecureRandom instance, if there is no optimal one.</p>
+    *
+    * @return Optimal SecureRandom instance
+    */
+   public static SecureRandom getSensibleInstance() {
+      SecureRandom result;
+
+      // Only get the name of the SecureRandom algorithm if it has not been determined, yet.
+      if (m_SecureRandomAlgorithmName == null)
+         m_SecureRandomAlgorithmName = getOptimalSecureRandomAlgorithmName();
+
+      // Use the optimal algorithm, if there is one
+      if (m_SecureRandomAlgorithmName.length() > 0)
+         try {
+            result = SecureRandom.getInstance(m_SecureRandomAlgorithmName);
+         } catch (NoSuchAlgorithmException e) {
+            // The chosen algorithm was not present, so use the default, which is guaranteed to work
+            result = new SecureRandom();
+         }
+      else {
+         // Choose the default if there could no optimal algorithm be found
+         result = new SecureRandom();
+      }
+
+      return result;
+   }
+
+   /**
+    * Get optimal SecureRandom singleton instance depending on the platform.
+    *
+    * <p>This method returns the default SecureRandom instance, if there is no optimal one.</p>
+    *
+    * @return Optimal SecureRandom singleton instance
+    */
+   public static SecureRandom getSensibleSingleton() {
+      if (m_Singleton == null)
+         m_Singleton = getSensibleInstance();
+
+      return m_Singleton;
+   }
+
+
+   //******************************************************************
+   // Private methods
+   //******************************************************************
 
    /**
     * Get optimal SecureRandom provider
@@ -81,53 +139,5 @@ public class SecureRandomFactory {
       }
 
       return result;
-   }
-
-   /**
-    * Get optimal SecureRandom instance depending on the platform.
-    *
-    * <p>
-    * This method retuns the default SecureRandom instance, if there is no optimal one.
-    * </p>
-    *
-    * @return Optimal SecureRandom instance
-    */
-   public static SecureRandom getSensibleInstance() {
-      SecureRandom result;
-
-      // Only get the name of the SecureRandom algorithm if it has not been determined, yet.
-      if (m_SecureRandomAlgorithmName == null)
-         m_SecureRandomAlgorithmName = getOptimalSecureRandomAlgorithmName();
-
-      // Use the optimal algorithm, if there is one
-      if (m_SecureRandomAlgorithmName.length() > 0)
-         try {
-            result = SecureRandom.getInstance(m_SecureRandomAlgorithmName);
-         } catch (NoSuchAlgorithmException e) {
-            // The chosen algorithm was not present, so use the default, which is guaranteed to work
-            result = new SecureRandom();
-         }
-      else {
-         // Choose the default if there could no optimal algorithm be found
-         result = new SecureRandom();
-      }
-
-      return result;
-   }
-
-   /**
-    * Get optimal SecureRandom singleton instance depending on the platform.
-    *
-    * <p>
-    * This method returns the default SecureRandom instance, if there is no optimal one.
-    * </p>
-    *
-    * @return Optimal SecureRandom singleton instance
-    */
-   public static SecureRandom getSensibleSingleton() {
-      if (m_Singleton == null)
-         m_Singleton = getSensibleInstance();
-
-      return m_Singleton;
    }
 }

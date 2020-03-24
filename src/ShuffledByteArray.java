@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, DB Systel GmbH
+ * Copyright (c) 2020, DB Systel GmbH
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -27,6 +27,7 @@
  *     2019-05-17: V1.1.1: Clear data first and then set flag that it is cleared. fhs
  *     2019-08-06: V1.1.2: Use SecureRandomFactory. fhs
  *     2019-08-23: V1.1.3: Use SecureRandom singleton. fhs
+ *     2020-03-23: V1.2.0: Restructured source code according to DBS programming guidelines. fhs
  */
 package dbscryptolib;
 
@@ -38,13 +39,12 @@ import java.util.Objects;
  * Stores a byte array in a shuffled form.
  *
  * @author Frank Schwab
- * @version 1.1.3
+ * @version 1.2.0
  */
 public final class ShuffledByteArray implements AutoCloseable {
-
-   /*
-    * Instance variables
-    */
+   //******************************************************************
+   // Instance variables
+   //******************************************************************
 
    /**
     * Byte array to store the data in
@@ -80,6 +80,11 @@ public final class ShuffledByteArray implements AutoCloseable {
     */
    private final SecureRandom SECURE_PRNG = SecureRandomFactory.getSensibleSingleton();
 
+
+   //******************************************************************
+   // Constructor
+   //******************************************************************
+
    /**
     * Constructor for the shuffled byte array with a source array
     *
@@ -97,9 +102,139 @@ public final class ShuffledByteArray implements AutoCloseable {
       this.isValid = true;
    }
 
+
+   //******************************************************************
+   // Public methods
+   //******************************************************************
+
    /*
-    * Private methods
+    * Access methods
     */
+
+   /**
+    * Gets the original array content
+    *
+    * @return Original array content
+    * @throws IllegalStateException if the shuffled array has already been destroyed
+    */
+   public byte[] getData() throws IllegalStateException {
+      checkState();
+
+      return getValues();
+   }
+
+   /**
+    * Gets an array element at a given position
+    *
+    * @param externalIndex Index of the array element
+    * @return Value of the array element at the given position
+    * @throws ArrayIndexOutOfBoundsException if index is outside of allowed bounds
+    * @throws IllegalStateException          if array has already been destroyed
+    */
+   public byte getAt(final int externalIndex) throws ArrayIndexOutOfBoundsException, IllegalStateException {
+      checkStateAndExternalIndex(externalIndex);
+
+      return this.byteArray[getArrayIndex(externalIndex)];
+   }
+
+   /**
+    * Sets the array element at a given position to a given value
+    *
+    * @param externalIndex Index of the array element
+    * @param newValue      New value of the array element
+    * @throws ArrayIndexOutOfBoundsException if index is outside of allowed bounds
+    * @throws IllegalStateException          if array has already been destroyed
+    */
+   public void setAt(final int externalIndex, final byte newValue) throws ArrayIndexOutOfBoundsException, IllegalStateException {
+      checkStateAndExternalIndex(externalIndex);
+
+      this.byteArray[getArrayIndex(externalIndex)] = newValue;
+   }
+
+   /**
+    * Gets the real array length
+    *
+    * @return Real length of stored array
+    * @throws IllegalStateException if the shuffled array has already been
+    *                               destroyed
+    */
+   public int length() throws IllegalStateException {
+      checkState();
+
+      return getRealIndex(this.storedArrayLength);
+   }
+
+   /**
+    * Checks whether this ShuffledByteArray is valid
+    *
+    * @return {@code True}, if this ShuffledByteArray is valid.
+    * {@code False}, if it has been deleted
+    */
+   public boolean isValid() {
+      return this.isValid;
+   }
+
+   /**
+    * Returns the hash code of this {@code ShuffledByteArray} instance.
+    *
+    * @return The hash code.
+    * @throws IllegalStateException if this shuffled byte array has already been destroyed.
+    */
+   @Override
+   public int hashCode() throws IllegalStateException {
+      checkState();
+
+      return this.hashCode;
+   }
+
+   /**
+    * Compares the specified object with this {@code ShuffledByteArray} instance.
+    *
+    * @param obj The object to compare.
+    * @return {@code true} if byte arrays of both object are equal, otherwise {@code false}.
+    * @throws IllegalStateException if the protected array has already been destroyed.
+    */
+   @Override
+   public boolean equals(final Object obj) throws IllegalStateException {
+      if (obj == null)
+         return false;
+
+      if (getClass() != obj.getClass())
+         return false;
+
+      final ShuffledByteArray other = (ShuffledByteArray) obj;
+      final byte[] thisClearArray = this.getData();
+      final byte[] otherClearArray = other.getData();
+      final boolean result = Arrays.equals(thisClearArray, otherClearArray);
+
+      Arrays.fill(thisClearArray, (byte) 0); // Clear sensitive data
+      Arrays.fill(otherClearArray, (byte) 0); // Clear sensitive data
+
+      return result;
+   }
+
+   /*
+    * Method for AutoCloseable interface
+    */
+
+   /**
+    * Secure deletion of shuffled array.
+    *
+    * <p>This method is idempotent and never throws an exception.</p>
+    */
+   @Override
+   public void close() {
+      if (this.isValid) {
+         clearData();
+
+         this.isValid = false;
+      }
+   }
+
+
+   //******************************************************************
+   // Private methods
+   //******************************************************************
 
    /*
     * Check methods
@@ -227,8 +362,8 @@ public final class ShuffledByteArray implements AutoCloseable {
 
    /**
     * Reorganizes the index array for reordering of the byte array.
-    * <p>
-    * This includes setting a random start position in the index array.
+    *
+    * <p>This includes setting a random start position in the index array.</p>
     */
    private void reorganizeIndexArray() {
       shuffleIndexArray();
@@ -339,137 +474,5 @@ public final class ShuffledByteArray implements AutoCloseable {
          result[i] = this.byteArray[getArrayIndex(i)];
 
       return result;
-   }
-
-   /*
-    * Public methods
-    */
-
-   /*
-    * Access methods
-    */
-
-   /**
-    * Gets the original array content
-    *
-    * @return Original array content
-    * @throws IllegalStateException if the shuffled array has already been
-    *                               destroyed
-    */
-   public byte[] getData() throws IllegalStateException {
-      checkState();
-
-      return getValues();
-   }
-
-   /**
-    * Gets an array element at a given position
-    *
-    * @param externalIndex Index of the array element
-    * @return Value of the array element at the given position
-    * @throws ArrayIndexOutOfBoundsException if index is outside of allowed bounds
-    * @throws IllegalStateException          if array has already been destroyed
-    */
-   public byte getAt(final int externalIndex) throws ArrayIndexOutOfBoundsException, IllegalStateException {
-      checkStateAndExternalIndex(externalIndex);
-
-      return this.byteArray[getArrayIndex(externalIndex)];
-   }
-
-   /**
-    * Sets the array element at a given position to a given value
-    *
-    * @param externalIndex Index of the array element
-    * @param newValue      New value of the array element
-    * @throws ArrayIndexOutOfBoundsException if index is outside of allowed bounds
-    * @throws IllegalStateException          if array has already been destroyed
-    */
-   public void setAt(final int externalIndex, final byte newValue) throws ArrayIndexOutOfBoundsException, IllegalStateException {
-      checkStateAndExternalIndex(externalIndex);
-
-      this.byteArray[getArrayIndex(externalIndex)] = newValue;
-   }
-
-   /**
-    * Gets the real array length
-    *
-    * @return Real length of stored array
-    * @throws IllegalStateException if the shuffled array has already been
-    *                               destroyed
-    */
-   public int length() throws IllegalStateException {
-      checkState();
-
-      return getRealIndex(this.storedArrayLength);
-   }
-
-   /**
-    * Checks whether this ShuffledByteArray is valid
-    *
-    * @return <code>True</code>, if this ShuffledByteArray is valid.
-    * <code>False</code>, if it has been deleted
-    */
-   public boolean isValid() {
-      return this.isValid;
-   }
-
-   /**
-    * Returns the hash code of this <code>ShuffledByteArray</code> instance.
-    *
-    * @return The hash code.
-    * @throws IllegalStateException if this shuffled byte array has already been
-    *                               destroyed.
-    */
-   @Override
-   public int hashCode() throws IllegalStateException {
-      checkState();
-
-      return this.hashCode;
-   }
-
-   /**
-    * Compares the specified object with this <code>ShuffledByteArray</code>
-    * instance.
-    *
-    * @param obj The object to compare.
-    * @return true if byte arrays of both object are equal, otherwise false.
-    * @throws IllegalStateException if the protected array has already been
-    *                               destroyed.
-    */
-   @Override
-   public boolean equals(final Object obj) throws IllegalStateException {
-      if (obj == null)
-         return false;
-
-      if (getClass() != obj.getClass())
-         return false;
-
-      final ShuffledByteArray other = (ShuffledByteArray) obj;
-      final byte[] thisClearArray = this.getData();
-      final byte[] otherClearArray = other.getData();
-      final boolean result = Arrays.equals(thisClearArray, otherClearArray);
-
-      Arrays.fill(thisClearArray, (byte) 0); // Clear sensitive data
-      Arrays.fill(otherClearArray, (byte) 0); // Clear sensitive data
-
-      return result;
-   }
-
-   /*
-    * Method for AutoCloseable interface
-    */
-
-   /**
-    * Secure deletion of shuffled array.
-    * <p>
-    * This method is idempotent and never throws an exception.
-    */
-   @Override
-   public void close() {
-      if (this.isValid) {
-         clearData();
-
-         this.isValid = false;
-      }
    }
 }

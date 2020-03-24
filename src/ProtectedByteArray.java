@@ -27,6 +27,7 @@
  *     2020-03-10: V4.3.0: Use "SecureRandomFactory". fhs
  *     2020-03-10: V4.4.0: Added "length" method and checks of state. fhs
  *     2020-03-13: V4.5.0: Added checks for null. fhs
+ *     2020-03-23: V4.6.0: Restructured source code according to DBS programming guidelines. fhs
  */
 package dbscryptolib;
 
@@ -38,20 +39,28 @@ import java.util.Objects;
  * Stores a byte array in a protected form where "protection" means that 1. the
  * data are only stored in an obfuscated form and 2. the data are cleared from
  * memory when "close" is called.
- * <p>
- * Note: The content of the byte array can not be changed after it has been set
- * with the constructor.
+ *
+ * <p>Note: The content of the byte array can not be changed after it has been set
+ * with the constructor.</p>
  *
  * @author Frank Schwab
- * @version 4.5.0
+ * @version 4.6.0
  */
 public final class ProtectedByteArray implements AutoCloseable {
+   //******************************************************************
+   // Instance variables
+   //******************************************************************
 
    private final ShuffledByteArray protectedArray;
    private final ShuffledByteArray obfuscation;
 
+
+   //******************************************************************
+   // Constructors
+   //******************************************************************
+
    /**
-    * Creates a new <code>ProtectedByteArray</code> for the specified data.
+    * Creates a new {@code ProtectedByteArray} for the specified data.
     *
     * @param arrayToProtect The byte array to protect.
     * @throws NullPointerException if {@code arrayToProtect} is null
@@ -67,8 +76,8 @@ public final class ProtectedByteArray implements AutoCloseable {
    }
 
    /**
-    * Creates a new <code>ProtectedByteArray</code> for the specified data
-    * starting from <code>offset</code> with length <code>len</code>.
+    * Creates a new {@code ProtectedByteArray} for the specified data
+    * starting from {@code offset} with length {@code len}.
     *
     * @param arrayToProtect The byte array to protect.
     * @param offset         The offset of the data in the byte array.
@@ -98,6 +107,108 @@ public final class ProtectedByteArray implements AutoCloseable {
       Arrays.fill(intermediateArray, (byte) 0); // Clear sensitive data
    }
 
+
+   //******************************************************************
+   // Public methods
+   //******************************************************************
+
+   /**
+    * Returns the data of the byte array in the clear.
+    *
+    * @return the data in the byte array.
+    * @throws IllegalStateException if the protected array has already been destroyed.
+    */
+   public byte[] getData() throws IllegalStateException {
+      checkState();
+
+      return getDeObfuscatedArray();
+   }
+
+   /**
+    * Returns the hash code of this {@code ProtectedByteArray} instance.
+    *
+    * @return The hash code.
+    * @throws IllegalStateException if the protected array has already been
+    *                               destroyed.
+    */
+   @Override
+   public int hashCode() throws IllegalStateException {
+      checkState();
+
+      return this.protectedArray.hashCode();
+   }
+
+   /**
+    * Compares the specified object with this {@code ProtectedByteArray}
+    * instance.
+    *
+    * @param obj The object to compare.
+    * @return true if byte arrays of both object are equal, otherwise false.
+    * @throws IllegalStateException if the protected array has already been  destroyed.
+    */
+   @Override
+   public boolean equals(final Object obj) throws IllegalStateException {
+      checkState();
+
+      if (obj == null)
+         return false;
+
+      if (getClass() != obj.getClass())
+         return false;
+
+      final ProtectedByteArray other = (ProtectedByteArray) obj;
+      final byte[] thisClearKey = this.getData();
+      final byte[] otherClearKey = other.getData();
+
+      final boolean result = Arrays.equals(thisClearKey, otherClearKey);
+
+      Arrays.fill(thisClearKey, (byte) 0);
+      Arrays.fill(otherClearKey, (byte) 0);
+
+      return result;
+   }
+
+   /**
+    * Gets the array length
+    *
+    * @return Real length of stored array
+    * @throws IllegalStateException if the protected array has already been destroyed
+    */
+   public int length() throws IllegalStateException {
+      checkState();
+
+      return this.protectedArray.length();
+   }
+
+   /**
+    * Check whether this {@code ProtectedByteArray} contains valid data
+    *
+    * @return {@code true}: Data are valid. {@code false}: Data are not valid.
+    */
+   public boolean isValid() {
+      return this.protectedArray.isValid();
+   }
+
+   /*
+    * Method for AutoCloseable interface
+    */
+
+   /**
+    * Secure deletion of byte array.
+    *
+    * <p>This method is idempotent and never throws an exception.</p>
+    */
+   @Override
+   public void close() {
+      this.protectedArray.close();
+      this.obfuscation.close();
+   }
+
+
+   //******************************************************************
+   // Private methods
+   //******************************************************************
+
    /*
     * Check methods
     */
@@ -108,9 +219,9 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @param arrayToProtect Key as byte array
     * @param offset         The offset of the data in the byte array.
     * @param len            The length of the data in the byte array.
-    * @throws ArrayIndexOutOfBoundsException if <code>offset</code> or <code>len</code> are less than 0.
-    * @throws IllegalArgumentException       if <code>arrayToProtect</code> is not long enough to get <code>len</code> bytes from position
-    *                                        <code>offset</code> in array <code>arrayToProtect</code>.
+    * @throws ArrayIndexOutOfBoundsException if {@code offset} or {@code len} are less than 0.
+    * @throws IllegalArgumentException       if {@code arrayToProtect} is not long enough to get {@code len} bytes from position
+    *                                        {@code offset} in array {@code arrayToProtect}.
     */
    private void checkOffsetAndLength(final byte[] arrayToProtect, final int offset, final int len) throws IllegalArgumentException {
       if ((offset < 0) || (len < 0))
@@ -181,102 +292,5 @@ public final class ProtectedByteArray implements AutoCloseable {
          result[i] = (byte) (this.protectedArray.getAt(i) ^ this.obfuscation.getAt(i));
 
       return result;
-   }
-
-   /*
-    * Access methods
-    */
-
-   /**
-    * Returns the data of the byte array in the clear.
-    *
-    * @return the data in the byte array.
-    * @throws IllegalStateException if the protected array has already been destroyed.
-    */
-   public byte[] getData() throws IllegalStateException {
-      checkState();
-
-      return getDeObfuscatedArray();
-   }
-
-   /**
-    * Returns the hash code of this <code>ProtectedByteArray</code> instance.
-    *
-    * @return The hash code.
-    * @throws IllegalStateException if the protected array has already been
-    *                               destroyed.
-    */
-   @Override
-   public int hashCode() throws IllegalStateException {
-      checkState();
-
-      return this.protectedArray.hashCode();
-   }
-
-   /**
-    * Compares the specified object with this <code>ProtectedByteArray</code>
-    * instance.
-    *
-    * @param obj The object to compare.
-    * @return true if byte arrays of both object are equal, otherwise false.
-    * @throws IllegalStateException if the protected array has already been  destroyed.
-    */
-   @Override
-   public boolean equals(final Object obj) throws IllegalStateException {
-      checkState();
-
-      if (obj == null)
-         return false;
-
-      if (getClass() != obj.getClass())
-         return false;
-
-      final ProtectedByteArray other = (ProtectedByteArray) obj;
-      final byte[] thisClearKey = this.getData();
-      final byte[] otherClearKey = other.getData();
-
-      final boolean result = Arrays.equals(thisClearKey, otherClearKey);
-
-      Arrays.fill(thisClearKey, (byte) 0);
-      Arrays.fill(otherClearKey, (byte) 0);
-
-      return result;
-   }
-
-   /**
-    * Gets the array length
-    *
-    * @return Real length of stored array
-    * @throws IllegalStateException if the protected array has already been destroyed
-    */
-   public int length() throws IllegalStateException {
-      checkState();
-
-      return this.protectedArray.length();
-   }
-
-   /**
-    * Check whether this <code>ProtectedByteArray</code> contains valid data
-    *
-    * @return <code>true</code>: Data are valid. <code>false</code>: Data are
-    * not valid.
-    */
-   public boolean isValid() {
-      return this.protectedArray.isValid();
-   }
-
-   /*
-    * Method for AutoCloseable interface
-    */
-
-   /**
-    * Secure deletion of byte array.
-    * <p>
-    * This method is idempotent and never throws an exception.
-    */
-   @Override
-   public void close() {
-      this.protectedArray.close();
-      this.obfuscation.close();
    }
 }
