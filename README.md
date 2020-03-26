@@ -41,4 +41,4 @@ Frank Schwab ([Mail](mailto:frank.schwab@deutschebahn.com "Mail"))
 
 ## License
 
-SecureSecretKeySpec is released under the 3-clause BSD license. See "LICENSE" for details.
+SecureSecretKeySpec is released under the Apache license, V2.0. See "LICENSE" for details.

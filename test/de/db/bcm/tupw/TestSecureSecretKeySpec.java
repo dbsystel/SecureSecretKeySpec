@@ -22,7 +22,7 @@
  * Changes: 
  *     2020-03-10: V1.0.0: Created. fhs
  */
-package dbscryptolib;
+package de.db.bcm.tupw.crypto;
 
 import org.junit.*;
 
