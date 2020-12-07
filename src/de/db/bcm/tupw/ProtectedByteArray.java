@@ -27,9 +27,11 @@
  *     2020-03-10: V4.4.0: Added "length" method and checks of state. fhs
  *     2020-03-13: V4.5.0: Added checks for null. fhs
  *     2020-03-23: V4.6.0: Restructured source code according to DBS programming guidelines. fhs
+ *     2020-12-04: V4.7.0: Corrected several SonarLint findings and made class serializable. fhs
  */
 package de.db.bcm.tupw.crypto;
 
+import java.io.Serializable;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Objects;
@@ -43,9 +45,14 @@ import java.util.Objects;
  * with the constructor.</p>
  *
  * @author Frank Schwab
- * @version 4.6.0
+ * @version 4.7.0
  */
-public final class ProtectedByteArray implements AutoCloseable {
+public final class ProtectedByteArray implements AutoCloseable, Serializable {
+   /**
+    * Serial version UID for Serializable interface
+    */
+   private static final long serialVersionUID = -491054792691223953L;
+
    //******************************************************************
    // Instance variables
    //******************************************************************
@@ -64,7 +71,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @param arrayToProtect The byte array to protect.
     * @throws NullPointerException if {@code arrayToProtect} is null
     */
-   public ProtectedByteArray(final byte[] arrayToProtect) throws NullPointerException {
+   public ProtectedByteArray(final byte[] arrayToProtect) {
       Objects.requireNonNull(arrayToProtect, "Array to protect is null");
 
       this.protectedArray = new ShuffledByteArray(arrayToProtect);
@@ -87,9 +94,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     *                                        array {@code arrayToProtect}.
     * @throws NullPointerException           if {@code arrayToProtect} is null
     */
-   public ProtectedByteArray(final byte[] arrayToProtect, final int offset, final int len) throws ArrayIndexOutOfBoundsException,
-            IllegalArgumentException,
-            NullPointerException {
+   public ProtectedByteArray(final byte[] arrayToProtect, final int offset, final int len) {
       Objects.requireNonNull(arrayToProtect, "Array to protect is null");
 
       checkOffsetAndLength(arrayToProtect, offset, len);
@@ -117,7 +122,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @return the data in the byte array.
     * @throws IllegalStateException if the protected array has already been destroyed.
     */
-   public byte[] getData() throws IllegalStateException {
+   public byte[] getData() {
       checkState();
 
       return getDeObfuscatedArray();
@@ -131,7 +136,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     *                               destroyed.
     */
    @Override
-   public int hashCode() throws IllegalStateException {
+   public int hashCode() {
       checkState();
 
       return this.protectedArray.hashCode();
@@ -146,7 +151,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @throws IllegalStateException if the protected array has already been  destroyed.
     */
    @Override
-   public boolean equals(final Object obj) throws IllegalStateException {
+   public boolean equals(final Object obj) {
       checkState();
 
       if (obj == null)
@@ -173,7 +178,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @return Real length of stored array
     * @throws IllegalStateException if the protected array has already been destroyed
     */
-   public int length() throws IllegalStateException {
+   public int length() {
       checkState();
 
       return this.protectedArray.length();
@@ -222,7 +227,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @throws IllegalArgumentException       if {@code arrayToProtect} is not long enough to get {@code len} bytes from position
     *                                        {@code offset} in array {@code arrayToProtect}.
     */
-   private void checkOffsetAndLength(final byte[] arrayToProtect, final int offset, final int len) throws IllegalArgumentException {
+   private void checkOffsetAndLength(final byte[] arrayToProtect, final int offset, final int len) {
       if ((offset < 0) || (len < 0))
          throw new ArrayIndexOutOfBoundsException("offset < 0 || len < 0");
 
@@ -236,7 +241,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @throws IllegalStateException if the shuffled array has already been
     *                               destroyed
     */
-   private void checkState() throws IllegalStateException {
+   private void checkState() {
       if (!this.protectedArray.isValid())
          throw new IllegalStateException("ProtectedByteArray has already been destroyed");
    }
@@ -281,7 +286,7 @@ public final class ProtectedByteArray implements AutoCloseable {
     * @return Byte array of clear data
     * @throws IllegalStateException if protectedArray has already been destroyed
     */
-   private byte[] getDeObfuscatedArray() throws IllegalStateException {
+   private byte[] getDeObfuscatedArray() {
       final byte[] result = new byte[this.protectedArray.length()];
 
       // Need to cast a byte xor to a byte as Java does not define an

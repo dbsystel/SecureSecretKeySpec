@@ -22,11 +22,12 @@
  *     2016-09-26: V2.0.0: Use ProtectedByteArray. fhs
  *     2016-11-24: V2.1.0: Implement "javax.security.auth.Destroyable" interface. fhs
  *     2018-08-15: V2.1.1: Added a few "finals". fhs
- *     2020-03-10: V2.2.0: Make comparable with {@code SecretkeySpec}, constructor argument checks,
- *                         throw IllegalStateExcpetions when instance has been closed or destroyed. fhs
+ *     2020-03-10: V2.2.0: Make comparable with {@code SecretKeySpec}, constructor argument checks,
+ *                         throw IllegalStateExceptions when instance has been closed or destroyed. fhs
  *     2020-03-11: V2.2.1: Added some "throws" statements. fhs
  *     2020-03-13: V2.3.0: Added checks for null. fhs
  *     2020-03-23: V2.4.0: Restructured source code according to DBS programming guidelines. fhs
+ *     2020-12-04: V2.5.0: Corrected several SonarLint findings and made class serializable. fhs
  */
 package de.db.bcm.tupw.crypto;
 
@@ -45,9 +46,14 @@ import java.util.Objects;
  * <p>It is intended to be used as a drop-in replacement for {@code SecretKeySpec}.</p>
  *
  * @author Frank Schwab
- * @version 2.4.0
+ * @version 2.5.0
  */
-public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, AutoCloseable {
+public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, AutoCloseable {
+   /**
+    * Serial version UID for Serializable interface that is inherited from {@code SecretKey}
+    */
+   private static final long serialVersionUID = 6359012607253332472L;
+
    //******************************************************************
    // Private constants
    //******************************************************************
@@ -108,7 +114,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     *                                        do not specify a valid chunk in the {@code key}.
     * @throws NullPointerException           if {@code algorithm} or {@code key} is null
     */
-   public SecureSecretKeySpec(final byte[] key, final int offset, final int len, final String algorithm) throws ArrayIndexOutOfBoundsException, IllegalArgumentException {
+   public SecureSecretKeySpec(final byte[] key, final int offset, final int len, final String algorithm) {
       checkKeyAndAlgorithm(key, algorithm);
 
       this.key = new ProtectedByteArray(key, offset, len);
@@ -134,7 +140,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public String getAlgorithm() throws IllegalStateException {
+   public String getAlgorithm() {
       checkState();
 
       return new String(algorithm.getData());
@@ -147,7 +153,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public String getFormat() throws IllegalStateException {
+   public String getFormat() {
       checkState();
 
       return "RAW";
@@ -160,7 +166,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public byte[] getEncoded() throws IllegalStateException {
+   public byte[] getEncoded() {
       checkState();
 
       return this.key.getData();
@@ -173,7 +179,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public int hashCode() throws IllegalStateException {
+   public int hashCode() {
       checkState();
 
       // Java does not indicate an over- or underflow so it is safe
@@ -189,7 +195,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public boolean equals(final Object obj) throws IllegalStateException {
+   public boolean equals(final Object obj) {
       checkState();
 
       if (obj == null)
@@ -210,7 +216,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
       Arrays.fill(thisKey, (byte) 0);
       Arrays.fill(otherKey, (byte) 0);
 
-      return (result & this.getAlgorithm().equalsIgnoreCase(other.getAlgorithm()));
+      return (result && this.getAlgorithm().equalsIgnoreCase(other.getAlgorithm()));
    }
 
    /*
@@ -276,7 +282,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalArgumentException if {@code algorithm} or {@code key} is empty
     * @throws NullPointerException     if {@code algorithm} or {@code key} is null
     */
-   private void checkKeyAndAlgorithm(final byte[] key, final String algorithm) throws IllegalArgumentException, NullPointerException {
+   private void checkKeyAndAlgorithm(final byte[] key, final String algorithm) {
       checkKey(key);
       checkAlgorithm(algorithm);
    }
@@ -288,7 +294,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalArgumentException if {@code algorithm} is empty
     * @throws NullPointerException     if {@code algorithm} is null
     */
-   private void checkAlgorithm(final String algorithm) throws IllegalArgumentException, NullPointerException {
+   private void checkAlgorithm(final String algorithm) {
       Objects.requireNonNull(algorithm, "Algorithm is null");
 
       if (algorithm.length() == 0)
@@ -302,7 +308,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * @throws IllegalArgumentException if {@code key} is empty
     * @throws NullPointerException     if {@code key} is null
     */
-   private void checkKey(final byte[] key) throws IllegalArgumentException, NullPointerException {
+   private void checkKey(final byte[] key) {
       Objects.requireNonNull(key, "Key is null");
 
       if (key.length == 0)
@@ -314,7 +320,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     *
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed
     */
-   private void checkState() throws IllegalStateException {
+   private void checkState() {
       if (!this.key.isValid())
          throw new IllegalStateException("SecureSecretKeySpec has already been destroyed");
    }
@@ -323,11 +329,7 @@ public class SecureSecretKeySpec implements SecretKey, KeySpec, Destroyable, Aut
     * Set the compatible class {@code SecretKeySpec} for use in the {@code equals} method
     */
    private void setCompatibleClass() {
-      // This is instantiated to get the class object without having to call "Class.forName()"}" which
-      // needs handling of a "ClassNotFound" exception.
-      final SecretKeySpec tempSpec = new SecretKeySpec(new byte[1], "");
-
-      compatibleClass = tempSpec.getClass();
+      compatibleClass = SecretKeySpec.class;
    }
 
    /*

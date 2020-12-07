@@ -27,9 +27,11 @@
  *     2019-08-06: V1.1.2: Use SecureRandomFactory. fhs
  *     2019-08-23: V1.1.3: Use SecureRandom singleton. fhs
  *     2020-03-23: V1.2.0: Restructured source code according to DBS programming guidelines. fhs
+ *     2020-12-04: V1.3.0: Corrected several SonarLint findings and made class serializable. fhs
  */
 package de.db.bcm.tupw.crypto;
 
+import java.io.Serializable;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Objects;
@@ -38,9 +40,14 @@ import java.util.Objects;
  * Stores a byte array in a shuffled form.
  *
  * @author Frank Schwab
- * @version 1.2.0
+ * @version 1.3.0
  */
-public final class ShuffledByteArray implements AutoCloseable {
+public final class ShuffledByteArray implements AutoCloseable, Serializable {
+   /**
+    * Serial version UID for Serializable interface
+    */
+   private static final long serialVersionUID = 7824599800903260500L;
+
    //******************************************************************
    // Instance variables
    //******************************************************************
@@ -90,7 +97,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @param sourceArray Source byte array
     * @throws IllegalArgumentException if {@code sourceArray} is {@code null}
     */
-   public ShuffledByteArray(final byte[] sourceArray) throws IllegalArgumentException {
+   public ShuffledByteArray(final byte[] sourceArray) {
       Objects.requireNonNull(sourceArray, "Source array is null");
 
       initializeDataStructures(sourceArray.length);
@@ -116,7 +123,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @return Original array content
     * @throws IllegalStateException if the shuffled array has already been destroyed
     */
-   public byte[] getData() throws IllegalStateException {
+   public byte[] getData() {
       checkState();
 
       return getValues();
@@ -130,7 +137,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @throws ArrayIndexOutOfBoundsException if index is outside of allowed bounds
     * @throws IllegalStateException          if array has already been destroyed
     */
-   public byte getAt(final int externalIndex) throws ArrayIndexOutOfBoundsException, IllegalStateException {
+   public byte getAt(final int externalIndex) {
       checkStateAndExternalIndex(externalIndex);
 
       return this.byteArray[getArrayIndex(externalIndex)];
@@ -144,7 +151,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @throws ArrayIndexOutOfBoundsException if index is outside of allowed bounds
     * @throws IllegalStateException          if array has already been destroyed
     */
-   public void setAt(final int externalIndex, final byte newValue) throws ArrayIndexOutOfBoundsException, IllegalStateException {
+   public void setAt(final int externalIndex, final byte newValue) {
       checkStateAndExternalIndex(externalIndex);
 
       this.byteArray[getArrayIndex(externalIndex)] = newValue;
@@ -157,7 +164,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @throws IllegalStateException if the shuffled array has already been
     *                               destroyed
     */
-   public int length() throws IllegalStateException {
+   public int length() {
       checkState();
 
       return getRealIndex(this.storedArrayLength);
@@ -180,7 +187,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @throws IllegalStateException if this shuffled byte array has already been destroyed.
     */
    @Override
-   public int hashCode() throws IllegalStateException {
+   public int hashCode() {
       checkState();
 
       return this.hashCode;
@@ -194,7 +201,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @throws IllegalStateException if the protected array has already been destroyed.
     */
    @Override
-   public boolean equals(final Object obj) throws IllegalStateException {
+   public boolean equals(final Object obj) {
       if (obj == null)
          return false;
 
@@ -244,7 +251,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     *
     * @throws IllegalStateException if the shuffled array has already been destroyed
     */
-   private void checkState() throws IllegalStateException {
+   private void checkState() {
       if (!this.isValid)
          throw new IllegalStateException("ShuffledByteArray has already been destroyed");
    }
@@ -255,7 +262,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @param externalIndex Index value to be checked
     * @throws ArrayIndexOutOfBoundsException if index is out of array bounds
     */
-   private void checkExternalIndex(final int externalIndex) throws ArrayIndexOutOfBoundsException {
+   private void checkExternalIndex(final int externalIndex) {
       if ((externalIndex < 0) || (externalIndex >= getRealIndex(this.storedArrayLength)))
          throw new ArrayIndexOutOfBoundsException("Illegal index " + externalIndex);
    }
@@ -267,7 +274,7 @@ public final class ShuffledByteArray implements AutoCloseable {
     * @throws ArrayIndexOutOfBoundsException if index is out of array bounds
     * @throws IllegalStateException          if the shuffled array has already been destroyed
     */
-   private void checkStateAndExternalIndex(final int externalIndex) throws ArrayIndexOutOfBoundsException, IllegalStateException {
+   private void checkStateAndExternalIndex(final int externalIndex) {
       checkState();
       checkExternalIndex(externalIndex);
    }

@@ -23,6 +23,7 @@
  *     2019-08-05: V1.1.0: Cache SecureRandom algorithm name. Change method name. fhs
  *     2019-08-23: V1.2.0: Make it possible to use a SecureRandom singleton. fhs
  *     2020-03-23: V1.3.0: Restructured source code according to DBS programming guidelines. fhs
+ *     2020-12-04: V1.3.1: Corrected several SonarLint findings. fhs
  */
 package de.db.bcm.tupw.crypto;
 
@@ -35,9 +36,22 @@ import java.util.Set;
  * A class to get the most secure SecureRandom instance
  *
  * @author Frank Schwab
- * @version 1.3.0
+ * @version 1.3.1
  */
 public class SecureRandomFactory {
+   //******************************************************************
+   // Constructor
+   //******************************************************************
+
+   /**
+    * Private constructor
+    *
+    * <p>This class is not meant to be instantiated.</p>
+    */
+   private SecureRandomFactory() {
+      throw new IllegalStateException("Utility class");
+   }
+
    //******************************************************************
    // Instance variables
    //******************************************************************
