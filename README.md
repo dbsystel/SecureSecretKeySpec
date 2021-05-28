@@ -9,10 +9,7 @@ This makes it possible to easily find keys in a memory dump. One just has to sea
 * Implements the `AutoCloseable` interface so the key is automatically destroyed when the key is closed
 * Implements the `Destroyable` interface (unlike the original `SecretKeySpec`, this class has a working `destroy` method)
 * Stores the key and the algorithm name in an obfuscated form, so they never appear in the clear
-* Stores the key and the algorithm name in a shuffled form, so the order is changed
-* Stores the key and the algorithm name within a larger array of random values so it appears as random data
-
-It accomplishes this by using two classes `ProtectedByteArray` and `ShuffledByteArray`.
+* Stores the key and the algorithm name in a shuffled form, so the order is changed in memory
 
 A typical usage would be something like this:
 

@@ -1,21 +1,20 @@
 /*
- * Copyright (c) 2020, DB Systel GmbH
+ * Copyright (c) 2021, DB Systel GmbH
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * 
- * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * 
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * 
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
- * BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
- * SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  * Author: Frank Schwab, DB Systel GmbH
  *
@@ -69,12 +68,12 @@ public class TestProtectedByteArray {
    @Test
    public void TestNullArgument() {
       try {
-         ProtectedByteArray pba = new ProtectedByteArray(null);
+         ProtectedByteArray sba = new ProtectedByteArray(null);
 
          fail(EXPECTED_EXCEPTION);
       }
       catch (NullPointerException e) {
-         assertEquals("Exception: " + e.toString(), "Array to protect is null", e.getMessage());
+         assertEquals("Exception: " + e.toString(), "Source array is null", e.getMessage());
       }
       catch (Exception e) {
          e.printStackTrace();
@@ -84,11 +83,24 @@ public class TestProtectedByteArray {
 
    @Test
    public void TestEmptyArgument() {
-      ProtectedByteArray pba = new ProtectedByteArray(new byte[0]);
+      ProtectedByteArray sba = new ProtectedByteArray(new byte[0]);
 
-      byte[] result = pba.getData();
+      byte[] result = sba.getData();
 
       assertEquals("Empty byte array is retrieved with wrong length", 0, result.length);
+
+      try {
+         final byte notExistent = sba.getAt(1);
+
+         fail(EXPECTED_EXCEPTION);
+      }
+      catch (ArrayIndexOutOfBoundsException e) {
+         assertTrue("Exception: " + e.toString(), e.getMessage().contains("Illegal index"));
+      }
+      catch (Exception e) {
+         e.printStackTrace();
+         fail("Exception: " + e.toString());
+      }
    }
 
    @Test
@@ -97,10 +109,17 @@ public class TestProtectedByteArray {
 
       Arrays.fill(ba, FILL_VALUE);
 
-      ProtectedByteArray pba = new ProtectedByteArray(ba);
+      ProtectedByteArray sba = new ProtectedByteArray(ba);
 
-      assertArrayEquals("Data was not correctly retrieved", ba, pba.getData());
-      assertEquals("Retrieved data has different length from stored data", ba.length, pba.length());
+      assertArrayEquals("Data was not correctly retrieved", ba, sba.getData());
+      assertEquals("Retrieved data has different length from stored data", ba.length, sba.length());
+      assertEquals("Retrieved data at index 0 has different value from stored data", ba[0], sba.getAt(0));
+
+      sba.setAt(CHANGE_INDEX, OTHER_VALUE);
+      assertEquals("Retrieved data with 'getAt' has different value from what was set", OTHER_VALUE, sba.getAt(CHANGE_INDEX));
+
+      final byte[] retrievedBa = sba.getData();
+      assertEquals("Retrieved data with 'getData' has different value from what was set", OTHER_VALUE, retrievedBa[CHANGE_INDEX]);
    }
 
    @Test
@@ -109,13 +128,13 @@ public class TestProtectedByteArray {
 
       Arrays.fill(ba, FILL_VALUE);
 
-      ProtectedByteArray pba = new ProtectedByteArray(ba);
+      ProtectedByteArray sba = new ProtectedByteArray(ba);
 
-      pba.close();
-      assertFalse("ProtectedByteArray still valid after close", pba.isValid());
+      sba.close();
+      assertFalse("ProtectedByteArray still valid after close", sba.isValid());
 
       try {
-         pba.getData();
+         sba.getData();
 
          fail(EXPECTED_EXCEPTION);
       }
@@ -136,13 +155,13 @@ public class TestProtectedByteArray {
 
       Arrays.fill(ba, FILL_VALUE);
 
-      final ProtectedByteArray pba1 = new ProtectedByteArray(ba);
-      final ProtectedByteArray pba2 = new ProtectedByteArray(ba);
+      final ProtectedByteArray sba1 = new ProtectedByteArray(ba);
+      final ProtectedByteArray sba2 = new ProtectedByteArray(ba);
 
-      assertEquals("ProtectedByteArray are not equal when they should be", pba1, pba2);
-      assertEquals("ProtectedByteArray do not have identical hash codes", pba1.hashCode(), pba2.hashCode());
+      assertEquals("ProtectedByteArray are not equal when they should be", sba1, sba2);
+      assertEquals("ProtectedByteArray do not have identical hash codes", sba1.hashCode(), sba2.hashCode());
 
-      final ProtectedByteArray pba3 = new ProtectedByteArray(new byte[32]);
-      assertNotEquals("ProtectedByteArray are equal when they should not be (different keys)", pba1, pba3);
+      final ProtectedByteArray sba3 = new ProtectedByteArray(new byte[32]);
+      assertNotEquals("ProtectedByteArray are equal when they should not be (different keys)", sba1, sba3);
    }
 }

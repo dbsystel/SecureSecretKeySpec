@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, DB Systel GmbH
+ * Copyright (c) 2021, DB Systel GmbH
  * All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -28,12 +28,15 @@
  *     2020-03-13: V2.3.0: Added checks for null. fhs
  *     2020-03-23: V2.4.0: Restructured source code according to DBS programming guidelines. fhs
  *     2020-12-04: V2.5.0: Corrected several SonarLint findings and made class serializable. fhs
+ *     2020-12-29: V2.6.0: Made thread safe. fhs
+ *     2021-05-26: V2.7.0: This class is no longer serializable. It never should have been. fhs
  */
 package de.db.bcm.tupw.crypto;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.Destroyable;
+import java.io.*;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
 import java.util.Objects;
@@ -46,13 +49,21 @@ import java.util.Objects;
  * <p>It is intended to be used as a drop-in replacement for {@code SecretKeySpec}.</p>
  *
  * @author Frank Schwab
- * @version 2.5.0
+ * @version 2.7.0
  */
 public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, AutoCloseable {
-   /**
-    * Serial version UID for Serializable interface that is inherited from {@code SecretKey}
+   /*
+    * This class implements the Serialization interface because it is inherited from SecretKey
+    * but throws an exception whenever a serialization or deserialization is attempted.
+    * A secret key must *never* be serializable as this leads to security vulnerabilities.
     */
-   private static final long serialVersionUID = 6359012607253332472L;
+
+   /**
+    * Serial version UID for Serializable interface that is inherited from {@code javax.crypto.SecretKey}
+    * which inherits it from {@code java.secjurity.Key}
+    */
+   private static final long serialVersionUID = -6754161938847519344L;
+
 
    //******************************************************************
    // Private constants
@@ -140,7 +151,7 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public String getAlgorithm() {
+   public synchronized String getAlgorithm() {
       checkState();
 
       return new String(algorithm.getData());
@@ -153,7 +164,7 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public String getFormat() {
+   public synchronized String getFormat() {
       checkState();
 
       return "RAW";
@@ -166,7 +177,7 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public byte[] getEncoded() {
+   public synchronized byte[] getEncoded() {
       checkState();
 
       return this.key.getData();
@@ -179,7 +190,7 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public int hashCode() {
+   public synchronized int hashCode() {
       checkState();
 
       // Java does not indicate an over- or underflow so it is safe
@@ -195,7 +206,7 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
     * @throws IllegalStateException if the SecureSecretKeySpec has already been destroyed.
     */
    @Override
-   public boolean equals(final Object obj) {
+   public synchronized boolean equals(final Object obj) {
       checkState();
 
       if (obj == null)
@@ -204,7 +215,7 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
       final Class objectClass = obj.getClass();
 
       if ((objectClass != thisClass) &&
-               (objectClass != compatibleClass))
+            (objectClass != compatibleClass))
          return false;
 
       final SecretKey other = (SecretKey) obj;
@@ -229,7 +240,7 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
     * <p>This method is idempotent and never throws an exception.</p>
     */
    @Override
-   public void close() {
+   public synchronized void close() {
       this.key.close();
       this.algorithm.close();
    }
@@ -244,7 +255,7 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
     * <p>This method is idempotent and never throws an exception.</p>
     */
    @Override
-   public void destroy() {
+   public synchronized void destroy() {
       this.close();
    }
 
@@ -252,7 +263,7 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
     * Check whether secret key spec is destroyed
     */
    @Override
-   public boolean isDestroyed() {
+   public synchronized boolean isDestroyed() {
       return !this.key.isValid();
    }
 
@@ -261,7 +272,7 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
     *
     * @return {@code True}, if this ShuffledByteArray is valid. {@code False}, if it has been deleted.
     */
-   public boolean isValid() {
+   public synchronized boolean isValid() {
       return this.key.isValid();
    }
 
@@ -350,5 +361,19 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
       Arrays.fill(algorithmBytes, (byte) 0); // Clear sensitive data
 
       return result;
+   }
+
+   //******************************************************************
+   // Serializable-Methods
+   //******************************************************************
+
+   // We do not serialize a secret key
+
+   private void writeObject(ObjectOutputStream out) throws IOException {
+      throw new NotSerializableException("Secret keys must not be serialized");
+   }
+
+   private void readObject(ObjectInputStream in) throws IOException {
+      throw new NotSerializableException("Secret keys must not be deserialized");
    }
 }

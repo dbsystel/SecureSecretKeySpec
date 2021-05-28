@@ -24,6 +24,7 @@
  *     2019-08-23: V1.2.0: Make it possible to use a SecureRandom singleton. fhs
  *     2020-03-23: V1.3.0: Restructured source code according to DBS programming guidelines. fhs
  *     2020-12-04: V1.3.1: Corrected several SonarLint findings. fhs
+ *     2020-12-29: V1.4.0: Made thread safe. fhs
  */
 package de.db.bcm.tupw.crypto;
 
@@ -36,7 +37,7 @@ import java.util.Set;
  * A class to get the most secure SecureRandom instance
  *
  * @author Frank Schwab
- * @version 1.3.1
+ * @version 1.4.0
  */
 public class SecureRandomFactory {
    //******************************************************************
@@ -71,7 +72,7 @@ public class SecureRandomFactory {
     *
     * @return Optimal SecureRandom instance
     */
-   public static SecureRandom getSensibleInstance() {
+   public static synchronized SecureRandom getSensibleInstance() {
       SecureRandom result;
 
       // Only get the name of the SecureRandom algorithm if it has not been determined, yet.
@@ -101,7 +102,7 @@ public class SecureRandomFactory {
     *
     * @return Optimal SecureRandom singleton instance
     */
-   public static SecureRandom getSensibleSingleton() {
+   public static synchronized SecureRandom getSensibleSingleton() {
       if (m_Singleton == null)
          m_Singleton = getSensibleInstance();
 
