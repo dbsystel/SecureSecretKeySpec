@@ -20,8 +20,11 @@
  *
  * Changes:
  *     2021-05-28: V1.0.0: Created. fhs
+ *     2021-09-01: V1.0.1: Some small refactoring. fhs
  */
-package de.db.bcm.tupw.crypto;
+package de.db.bcm.crypto;
+
+import de.db.bcm.arrays.ArrayHelper;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
@@ -30,8 +33,17 @@ import java.util.Arrays;
 
 /**
  * Class to get masks for array indices
+ *
+ * @author Frank Schwab, DB Systel
+ * @version 1.0.1
  */
 public class MaskedIndex {
+   //******************************************************************
+   // Private constants
+   //******************************************************************
+   static final byte BUFFER_PRIMER = (byte) 0x5a;
+   static final int BUFFER_INT_OFFSET = 6;
+
    //******************************************************************
    // Instance variables
    //******************************************************************
@@ -66,7 +78,7 @@ public class MaskedIndex {
 
       final int result = bytesToInt(m_MaskBuffer, (7 * (Math.abs(forIndex) % 13) + 3) % 13);
 
-      Arrays.fill(m_MaskBuffer, (byte) 0);
+      ArrayHelper.clear(m_MaskBuffer);
 
       return result;
    }
@@ -82,7 +94,7 @@ public class MaskedIndex {
 
       final byte result = m_MaskBuffer[(13 * (forIndex & 0xf) + 5) & 0xf];
 
-      Arrays.fill(m_MaskBuffer, (byte) 0);
+      ArrayHelper.clear(m_MaskBuffer);
 
       return result;
    }
@@ -97,17 +109,17 @@ public class MaskedIndex {
     * @param forIndex The index to use for the mask calculation
     */
    private void getMaskBuffer(final int forIndex) {
-      Arrays.fill(m_SourceBuffer, (byte) 0x5a);
+      Arrays.fill(m_SourceBuffer, BUFFER_PRIMER);
 
-      intToBytes(forIndex, m_SourceBuffer, 6);
+      intToBytes(forIndex, m_SourceBuffer, BUFFER_INT_OFFSET);
 
       try {
          m_Encryptor.doFinal(m_SourceBuffer, 0, m_SourceBuffer.length, m_MaskBuffer, 0);
       } catch (Exception ex) {
          // BadPaddingException, IllegalBlockSizeException and ShortBufferException can never happen
+      } finally {
+         ArrayHelper.clear(m_SourceBuffer);
       }
-
-      Arrays.fill(m_SourceBuffer, (byte) 0);
    }
 
    /**
@@ -122,14 +134,17 @@ public class MaskedIndex {
 
       try {
          m_Encryptor = Cipher.getInstance("AES/ECB/NoPadding");
+
+         // This has to be "SecretKeySpec" and not "SecureSecretKeySpec".
+         // Otherwise, we would have an infinite loop here.
          SecretKeySpec maskKey = new SecretKeySpec(key, "AES");
 
          m_Encryptor.init(Cipher.ENCRYPT_MODE, maskKey);
       } catch (Exception ex) {
          // InvalidKeyException, NoSuchAlgorithmException and NoSuchPaddingException can never happen
+      } finally {
+         ArrayHelper.clear(key);
       }
-
-      Arrays.fill(key, (byte) 0);
    }
 
    /**
@@ -140,10 +155,16 @@ public class MaskedIndex {
     * @param startPos Start position in the byte array
     */
    private void intToBytes(final int i, final byte[] destArray, final int startPos) {
-      destArray[startPos] = (byte) ((i >> 24) & 0xff);
-      destArray[startPos + 1] = (byte) ((i >> 16) & 0xff);
-      destArray[startPos + 2] = (byte) ((i >> 8) & 0xff);
-      destArray[startPos + 3] = (byte) (i & 0xff);
+      int actPos = startPos + 3;
+      int j = i;
+
+      destArray[actPos] = (byte) (j & 0xff);
+      actPos--; j = j >>> 8;
+      destArray[actPos] = (byte) (j & 0xff);
+      actPos--; j = j >>> 8;
+      destArray[actPos] = (byte) (j & 0xff);
+      actPos--; j = j >>> 8;
+      destArray[actPos] = (byte) (j & 0xff);
    }
 
    /**

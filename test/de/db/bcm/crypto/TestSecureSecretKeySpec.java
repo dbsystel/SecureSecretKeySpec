@@ -18,10 +18,10 @@
  *
  * Author: Frank Schwab, DB Systel GmbH
  *
- * Changes: 
+ * Changes:
  *     2020-03-10: V1.0.0: Created. fhs
  */
-package de.db.bcm.tupw.crypto;
+package de.db.bcm.crypto;
 
 import org.junit.*;
 
@@ -67,15 +67,11 @@ public class TestSecureSecretKeySpec {
 
    @Test
    public void TestNullKeyAndAlgorithm() {
-      try {
-         final SecureSecretKeySpec spec = new SecureSecretKeySpec(null, null);
-
+      try (final SecureSecretKeySpec spec = new SecureSecretKeySpec(null, null)) {
          fail(EXPECTED_EXCEPTION);
-      }
-      catch (NullPointerException e) {
+      } catch (NullPointerException e) {
          assertEquals("Exception: " + e.toString(), "Key is null", e.getMessage());
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          e.printStackTrace();
          fail("Exception: " + e.toString());
       }
@@ -83,15 +79,11 @@ public class TestSecureSecretKeySpec {
 
    @Test
    public void TestNullKey() {
-      try {
-         final SecureSecretKeySpec spec = new SecureSecretKeySpec(null, ALGORITHM_NAME);
-
+      try (final SecureSecretKeySpec spec = new SecureSecretKeySpec(null, ALGORITHM_NAME)) {
          fail(EXPECTED_EXCEPTION);
-      }
-      catch (NullPointerException e) {
+      } catch (NullPointerException e) {
          assertEquals("Exception: " + e.toString(), "Key is null", e.getMessage());
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          e.printStackTrace();
          fail("Exception: " + e.toString());
       }
@@ -99,15 +91,11 @@ public class TestSecureSecretKeySpec {
 
    @Test
    public void TestNullAlgorithm() {
-      try {
-         final SecureSecretKeySpec spec = new SecureSecretKeySpec(new byte[1], null);
-
+      try (final SecureSecretKeySpec spec = new SecureSecretKeySpec(new byte[1], null)) {
          fail(EXPECTED_EXCEPTION);
-      }
-      catch (NullPointerException e) {
-      assertEquals("Exception: " + e.toString(), "Algorithm is null", e.getMessage());
-      }
-      catch (Exception e) {
+      } catch (NullPointerException e) {
+         assertEquals("Exception: " + e.toString(), "Algorithm is null", e.getMessage());
+      } catch (Exception e) {
          e.printStackTrace();
          fail("Exception: " + e.toString());
       }
@@ -115,15 +103,11 @@ public class TestSecureSecretKeySpec {
 
    @Test
    public void TestEmptyAlgorithm() {
-      try {
-         final SecureSecretKeySpec spec = new SecureSecretKeySpec(new byte[1], "");
-
+      try (final SecureSecretKeySpec spec = new SecureSecretKeySpec(new byte[1], "")) {
          fail(EXPECTED_EXCEPTION);
-      }
-      catch (IllegalArgumentException e) {
+      } catch (IllegalArgumentException e) {
          assertEquals("Exception: " + e.toString(), "Algorithm is empty", e.getMessage());
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          e.printStackTrace();
          fail("Exception: " + e.toString());
       }
@@ -135,11 +119,11 @@ public class TestSecureSecretKeySpec {
 
       Arrays.fill(key, (byte) 0x55);
 
-      final SecureSecretKeySpec spec = new SecureSecretKeySpec(key, ALGORITHM_NAME);
-
-      assertArrayEquals("Key was not correctly retrieved", key, spec.getEncoded());
-      assertEquals("Algorithm name not correctly retrieved", ALGORITHM_NAME, spec.getAlgorithm());
-      assertEquals("Format is not 'RAW'", "RAW", spec.getFormat());
+      try (final SecureSecretKeySpec spec = new SecureSecretKeySpec(key, ALGORITHM_NAME)) {
+         assertArrayEquals("Key was not correctly retrieved", key, spec.getEncoded());
+         assertEquals("Algorithm name not correctly retrieved", ALGORITHM_NAME, spec.getAlgorithm());
+         assertEquals("Format is not 'RAW'", "RAW", spec.getFormat());
+      }
    }
 
    @Test
@@ -157,13 +141,11 @@ public class TestSecureSecretKeySpec {
          spec.getAlgorithm();
 
          fail(EXPECTED_EXCEPTION);
-      }
-      catch (IllegalStateException e) {
+      } catch (IllegalStateException e) {
          final String message = e.getMessage();
 
          assertEquals("IllegalStateException with wrong message: " + message, "SecureSecretKeySpec has already been destroyed", message);
-      }
-      catch (Exception e) {
+      } catch (Exception e) {
          e.printStackTrace();
          fail("Exception: " + e.toString());
       }
