@@ -31,8 +31,10 @@
  *     2020-12-29: V2.6.0: Made thread safe. fhs
  *     2021-05-26: V2.7.0: This class is no longer serializable. It never should have been. fhs
  *     2021-09-03: V2.7.1: Correct signatures of Serializable methods. fhs
+ *     2021-09-28: V2.7.2: Ensure "equals" clears sensitive array data. fhs
  */
 package de.db.bcm.crypto;
+
 
 import de.db.bcm.arrays.ArrayHelper;
 
@@ -52,7 +54,7 @@ import java.util.Objects;
  * <p>It is intended to be used as a drop-in replacement for {@code SecretKeySpec}.</p>
  *
  * @author Frank Schwab
- * @version 2.7.1
+ * @version 2.7.2
  */
 public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, AutoCloseable {
    /*
@@ -196,7 +198,7 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
    public synchronized int hashCode() {
       checkState();
 
-      // Java does not indicate an over- or underflow so it is safe
+      // Java does not indicate an over- or underflow, so it is safe
       // to multiply with a number that will overflow on multiplication
       return this.key.hashCode() * 79 + this.algorithm.hashCode();
    }
@@ -226,13 +228,18 @@ public class SecureSecretKeySpec implements KeySpec, SecretKey, Destroyable, Aut
       boolean result = this.getAlgorithm().equalsIgnoreCase(other.getAlgorithm());
 
       if (result) {
-         final byte[] thisKey = this.getEncoded();
-         final byte[] otherKey = other.getEncoded();
+         byte[] thisKey = null;
+         byte[] otherKey = null;
 
-         result = Arrays.equals(thisKey, otherKey);
+         try {
+            thisKey = this.getEncoded();
+            otherKey = other.getEncoded();
 
-         ArrayHelper.clear(thisKey);
-         ArrayHelper.clear(otherKey);
+            result = Arrays.equals(thisKey, otherKey);
+         } finally {
+            ArrayHelper.safeClear(thisKey);
+            ArrayHelper.safeClear(otherKey);
+         }
       }
 
       return result;
