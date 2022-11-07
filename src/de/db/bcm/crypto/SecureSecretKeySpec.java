@@ -33,9 +33,9 @@
  *     2021-09-03: V2.7.1: Correct signatures of Serializable methods. fhs
  *     2021-09-28: V2.7.2: Ensure "equals" clears sensitive array data. fhs
  */
-package de.db.bcm.tupw.crypto;
+package de.db.bcm.crypto;
 
-import de.db.bcm.tupw.arrays.ArrayHelper;
+import de.db.bcm.arrays.ArrayHelper;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;

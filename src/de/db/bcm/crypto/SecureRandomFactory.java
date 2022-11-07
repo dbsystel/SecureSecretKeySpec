@@ -29,7 +29,7 @@
  *     2021-08-31: V1.6.0: Pick strong default instance, if necessary. fhs
  *     2021-08-31: V1.6.1: Corrected variable names. fhs
  */
-package de.db.bcm.tupw.crypto;
+package de.db.bcm.crypto;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;

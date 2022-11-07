@@ -23,9 +23,9 @@
  *     2021-09-01: V1.0.1: Some small refactoring. fhs
  *     2022-11-07: V1.1.0: Better mixing of bytes from and to buffers. fhs
  */
-package de.db.bcm.tupw.crypto;
+package de.db.bcm.crypto;
 
-import de.db.bcm.tupw.arrays.ArrayHelper;
+import de.db.bcm.arrays.ArrayHelper;
 
 import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
@@ -168,9 +168,9 @@ public class MaskedIndex {
       destArray[toPos] = (byte) (work & 0xff);
       toPos = (toPos + 3) & 0x0f; work >>>= 8;
       destArray[toPos] = (byte) (work & 0xff);
-      toPos = (toPos + 3) & 0x0f;  work >>>= 8;;
+      toPos = (toPos + 3) & 0x0f;  work >>>= 8;
       destArray[toPos] = (byte) (work & 0xff);
-      toPos = (toPos + 3) & 0x0f;  work >>>= 8;;
+      toPos = (toPos + 3) & 0x0f;  work >>>= 8;
       destArray[toPos] = (byte) (work & 0xff);
    }
 
