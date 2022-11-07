@@ -44,6 +44,8 @@ public class MaskedIndex {
    //******************************************************************
    static final byte BUFFER_PRIMER = (byte) 0x5a;
 
+   static final int MAX_INTEGER_MASK = 0x07ffffff;
+
    //******************************************************************
    // Instance variables
    //******************************************************************
@@ -74,7 +76,7 @@ public class MaskedIndex {
     * @return The int mask for the given index
     */
    public synchronized int getIntMask(final int forIndex) {
-      final int sanitizedIndex = forIndex & Integer.MAX_VALUE;
+      final int sanitizedIndex = forIndex & MAX_INTEGER_MASK;
 
       getMaskBuffer(sanitizedIndex);
 
@@ -92,7 +94,7 @@ public class MaskedIndex {
     * @return The byte mask for the given index
     */
    public synchronized byte getByteMask(final int forIndex) {
-      final int sanitizedIndex = forIndex & Integer.MAX_VALUE;
+      final int sanitizedIndex = forIndex & MAX_INTEGER_MASK;
 
       getMaskBuffer(sanitizedIndex);
 
@@ -177,9 +179,9 @@ public class MaskedIndex {
    /**
     * Get a mask integer from the bytes in an array
     *
-    * @param sourceArray Byte array to convert
+    * @param sourceArray Byte array to get the integer from
     * @param startPos Start position in the byte array
-    * @return The byte array as an integer
+    * @return Mask integer
     */
    private int getMaskIntFromArray(final byte[] sourceArray, final int startPos) {
       int result = 0;
