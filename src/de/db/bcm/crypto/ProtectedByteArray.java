@@ -34,9 +34,9 @@
  *     2021-06-09: V2.0.1: Simplified constructors. fhs
  *     2021-09-01: V2.0.2: Some refactoring. fhs
  */
-package de.db.bcm.crypto;
+package de.db.bcm.tupw.crypto;
 
-import de.db.bcm.arrays.ArrayHelper;
+import de.db.bcm.tupw.arrays.ArrayHelper;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
