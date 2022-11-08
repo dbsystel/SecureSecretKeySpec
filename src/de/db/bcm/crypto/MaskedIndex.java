@@ -22,6 +22,7 @@
  *     2021-05-28: V1.0.0: Created. fhs
  *     2021-09-01: V1.0.1: Some small refactoring. fhs
  *     2022-11-07: V1.1.0: Better mixing of bytes from and to buffers. fhs
+ *     2022-11-08: V1.2.0: Name all constants. fhs
  */
 package de.db.bcm.crypto;
 
@@ -36,23 +37,76 @@ import java.util.Arrays;
  * Class to get masks for array indices
  *
  * @author Frank Schwab, DB Systel
- * @version 1.1.0
+ * @version 1.2.0
  */
 public class MaskedIndex {
    //******************************************************************
    // Private constants
    //******************************************************************
+
+   /***
+    * Key size
+    */
+   static final int KEY_SIZE = 16;  // I.e. 128 bits
+
+   /***
+    * Buffer size
+    */
+   static final int BUFFER_SIZE = 16;
+
+   /***
+    * Mask for additions modulo buffer size
+    */
+   static final int BUFFER_SIZE_MASK = BUFFER_SIZE - 1;
+
+   /***
+    * Modulo value for the offset of an integer in a buffer
+    */
+   static final int MOD_BUFFER_SIZE_FOR_INTEGER = BUFFER_SIZE - 3;
+
+   /***
+    * Byte value to prime buffer with
+    */
    static final byte BUFFER_PRIMER = (byte) 0x5a;
 
-   static final int MAX_INTEGER_MASK = 0x07ffffff;
+   /***
+    * Step size for setting and getting bytes in the buffer
+    */
+   static final int STEP_SIZE = 3;
+
+   /***
+    * Number of bits to shift for a byte shift
+    */
+   static final int BYTE_SHIFT = 8;
+
+   /***
+    * Byte mask for integers
+    */
+   static final int INT_BYTE_MASK = 0xff;
+
+   /***
+    * Maximum allowed integer mask
+    */
+   static final int MAX_INTEGER_MASK = 0x7fffffff;
 
    //******************************************************************
    // Instance variables
    //******************************************************************
+
+   /***
+    * Encryptor to use
+    */
    private Cipher m_Encryptor;
 
-   private final byte[] m_SourceBuffer = new byte[16];
-   private final byte[] m_MaskBuffer   = new byte[16];
+   /***
+    * Source buffer for mask generation
+    */
+   private final byte[] m_SourceBuffer = new byte[BUFFER_SIZE];
+
+   /***
+    * Buffer for encryption result
+    */
+   private final byte[] m_MaskBuffer   = new byte[BUFFER_SIZE];
 
    //******************************************************************
    // Constructor
@@ -80,7 +134,8 @@ public class MaskedIndex {
 
       getMaskBuffer(sanitizedIndex);
 
-      final int result = getMaskIntFromArray(m_MaskBuffer, (7 * (sanitizedIndex % 13) + 3) % 13);
+      final int result = getMaskIntFromArray(m_MaskBuffer,
+            (7 * (sanitizedIndex % MOD_BUFFER_SIZE_FOR_INTEGER) + 3) % MOD_BUFFER_SIZE_FOR_INTEGER);
 
       ArrayHelper.clear(m_MaskBuffer);
 
@@ -98,7 +153,7 @@ public class MaskedIndex {
 
       getMaskBuffer(sanitizedIndex);
 
-      final byte result = m_MaskBuffer[(13 * (sanitizedIndex & 0xf) + 5) & 0xf];
+      final byte result = m_MaskBuffer[(13 * (sanitizedIndex & BUFFER_SIZE_MASK) + 5) & BUFFER_SIZE_MASK];
 
       ArrayHelper.clear(m_MaskBuffer);
 
@@ -117,7 +172,7 @@ public class MaskedIndex {
    private void getMaskBuffer(final int sanitizedIndex) {
       Arrays.fill(m_SourceBuffer, BUFFER_PRIMER);
 
-      final int offset = ((11 * sanitizedIndex) + 2) % 13;
+      final int offset = (11 * (sanitizedIndex % MOD_BUFFER_SIZE_FOR_INTEGER) + 2) % MOD_BUFFER_SIZE_FOR_INTEGER;
       storeIntInArray(sanitizedIndex, m_SourceBuffer, offset);
 
       try {
@@ -133,7 +188,7 @@ public class MaskedIndex {
     * Initialize the cipher
     */
    private void initializeCipher() {
-      final byte[] key = new byte[16];
+      final byte[] key = new byte[KEY_SIZE];
 
       final SecureRandom sprng = SecureRandomFactory.getSensibleSingleton();
 
@@ -167,13 +222,19 @@ public class MaskedIndex {
       int toPos = startPos;
       int work = sourceInt;
 
-      destArray[toPos] = (byte) (work & 0xff);
-      toPos = (toPos + 3) & 0x0f; work >>>= 8;
-      destArray[toPos] = (byte) (work & 0xff);
-      toPos = (toPos + 3) & 0x0f;  work >>>= 8;
-      destArray[toPos] = (byte) (work & 0xff);
-      toPos = (toPos + 3) & 0x0f;  work >>>= 8;
-      destArray[toPos] = (byte) (work & 0xff);
+      destArray[toPos] = (byte) (work & INT_BYTE_MASK);
+
+      toPos = (toPos + STEP_SIZE) & BUFFER_SIZE_MASK;
+      work >>>= BYTE_SHIFT;
+      destArray[toPos] = (byte) (work & INT_BYTE_MASK);
+
+      toPos = (toPos + STEP_SIZE) & BUFFER_SIZE_MASK;
+      work >>>= BYTE_SHIFT;
+      destArray[toPos] = (byte) (work & INT_BYTE_MASK);
+
+      toPos = (toPos + STEP_SIZE) & BUFFER_SIZE_MASK;
+      work >>>= BYTE_SHIFT;
+      destArray[toPos] = (byte) (work & INT_BYTE_MASK);
    }
 
    /**
@@ -184,16 +245,22 @@ public class MaskedIndex {
     * @return Mask integer
     */
    private int getMaskIntFromArray(final byte[] sourceArray, final int startPos) {
-      int result = 0;
+      int result;
       int fromPos = startPos;
 
-      result = (sourceArray[fromPos] & 0xff);  // This stupid Java sign extension!!!!
-      result <<= 8; fromPos = (fromPos + 3) & 0x0f;
-      result |= (sourceArray[fromPos] & 0xff);
-      result <<= 8; fromPos = (fromPos + 3) & 0x0f;
-      result |= (sourceArray[fromPos] & 0xff);
-      result <<= 8; fromPos = (fromPos + 3) & 0x0f;
-      result |= (sourceArray[fromPos] & 0xff);
+      result = (sourceArray[fromPos] & INT_BYTE_MASK);  // This stupid Java sign extension!!!!
+
+      result <<= BYTE_SHIFT;
+      fromPos = (fromPos + STEP_SIZE) & BUFFER_SIZE_MASK;
+      result |= (sourceArray[fromPos] & INT_BYTE_MASK);
+
+      result <<= BYTE_SHIFT;
+      fromPos = (fromPos + STEP_SIZE) & BUFFER_SIZE_MASK;
+      result |= (sourceArray[fromPos] & INT_BYTE_MASK);
+
+      result <<= BYTE_SHIFT;
+      fromPos = (fromPos + STEP_SIZE) & BUFFER_SIZE_MASK;
+      result |= (sourceArray[fromPos] & INT_BYTE_MASK);
 
       return result;
    }
