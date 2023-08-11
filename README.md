@@ -1,5 +1,7 @@
 # SecureSecretKeySpec
 
+> 💡 This repository is no longer actively maintained by DB Systel GmbH. Its development will continue here: https://github.com/xformerfhs/SecureSecretKeySpec
+
 Java's `SecretKeySpec` implementation is unsafe. It stores the key bytes in its original form and does not automatically delete them when the key is no longer in use, so it is still visible in memory until the next garbage collection.
 
 This makes it possible to easily find keys in a memory dump. One just has to search for the algorithm names and the keys are stored right next to them.
@@ -17,7 +19,7 @@ A typical usage would be something like this:
     // Get the key in variable "theKey"
     ...
     // Use it here
-    try (SecureSecretKeySpec mySecretKey = new SecureSecretKeySpec(theKey, "AES")) {         
+    try (SecureSecretKeySpec mySecretKey = new SecureSecretKeySpec(theKey, "AES")) {
        Arrays.fill(theKey, (byte) 0);  // Delete the key from memory. Now it is safely stored in the SecureSecretKeySpec
        ...
        // Use the SecureSecretKeySpec
